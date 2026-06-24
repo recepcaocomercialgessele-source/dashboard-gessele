@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<script>
+  // Password protection
+  var pw=prompt('Digite a senha para acessar:','');
+  if(pw!=='Visitas2026'){
+    document.documentElement.innerHTML='<div style="text-align:center;padding:50px;font-size:18px;color:#666;">Acesso negado. Senha incorreta.</div>';
+    throw new Error('Unauthorized');
+  }
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Gessele | Ranking Visita Qualificada 2026</title>
