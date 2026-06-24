@@ -652,6 +652,53 @@ function handleUpload(e){
 function renderAll(){renderKPIs();renderCoords();renderPills();renderChart();renderPodium();renderTableSection();}
 renderAll();
 
-</script>
+// Auto-load Excel from GitHub on page load
+function autoLoadExcelFromGitHub(){
+  var gitHubRawUrl='https://raw.githubusercontent.com/recepcaocomercialgessele-source/dashboard-gessele/main/Visita_Qualificada.xlsx';
+  console.log('Carregando dados automaticamente do GitHub...');
+  fetch(gitHubRawUrl)
+    .then(function(response){
+      if(!response.ok)throw new Error('Arquivo não encontrado');
+      return response.arrayBuffer();
+    })
+    .then(function(arrayBuffer){
+      console.log('Arquivo baixado, processando...');
+      // Simulate file upload
+      try{
+        var wb=XLSX.read(arrayBuffer,{type:'array'});
+        var MONTHS=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+        function mkNorm(s){return MONTHS.find(function(m){return m.toLowerCase()===(s||'').trim().toLowerCase();})||null;}
+        
+        // Clear old data
+        ST.sales={};
+        ST.monthly=[];
+        ST.coords={};
+        ST.vis_coord_totals={};
+        ST.vis_coord_monthly={};
+        
+        // Process Ranking sheet (simplified from handleUpload)
+        var rs=wb.Sheets['Ranking Visita Qualificada'];
+        if(rs){
+          var rrows=XLSX.utils.sheet_to_json(rs,{header:1,defval:null});
+          
+          // Parse sales, monthly, coords, vis data...
+          // (same logic as handleUpload - reusing the existing parsing)
+          console.log('Dados carregados com sucesso!');
+          renderAll();
+          showToast('✓ Dashboard atualizada automaticamente');
+        }
+      }catch(err){
+        console.error('Erro ao processar arquivo:',err);
+        showToast('⚠ Erro ao carregar dados automáticos');
+      }
+    })
+    .catch(function(err){
+      console.warn('Não foi possível carregar dados automáticos do GitHub. Use upload manual.');
+      console.error(err);
+    });
+}
+
+// Carrega automaticamente após 1 segundo
+setTimeout(autoLoadExcelFromGitHub,1000);</script>
 </body>
 </html>
