@@ -455,6 +455,70 @@ function renderTableSection(){
   }).join('');
 }
 
+// ── Leitura dinamica de tabela dinamica por coordenador (por titulo, nao por posicao) ──
+function normTxt(s){
+  return (s||'').toString().trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
+// Localiza uma tabela dinamica pelo titulo (ex: "Visita Qualificada por coordenador"),
+// depois localiza o cabecalho ("Responsável") e le coordenador/mes/contagem
+// sem depender de indices fixos de linha ou coluna.
+function findCoordPivot(rows, titleText, mkNorm){
+  var needle=normTxt(titleText);
+  var titleRow=-1, titleCol=-1;
+  for(var r=0;r<rows.length && titleRow<0;r++){
+    var row=rows[r]||[];
+    for(var c=0;c<row.length;c++){
+      if(normTxt(row[c])===needle){titleRow=r;titleCol=c;break;}
+    }
+  }
+  if(titleRow<0)return {monthly:{},totals:{}};
+
+  // procura o cabecalho "Responsável" a partir da linha do titulo
+  var headerRow=-1, respCol=-1;
+  for(var r2=titleRow;r2<Math.min(titleRow+6,rows.length);r2++){
+    var row2=rows[r2]||[];
+    for(var c2=titleCol;c2<row2.length;c2++){
+      if(normTxt(row2[c2])==='responsavel'){headerRow=r2;respCol=c2;break;}
+    }
+    if(headerRow>=0)break;
+  }
+  if(headerRow<0)return {monthly:{},totals:{}};
+
+  var monthCol=respCol+1, countCol=respCol+2;
+  var monthly={}, currentCoord='';
+  for(var r3=headerRow+1;r3<rows.length;r3++){
+    var row3=rows[r3]||[];
+    var respVal=row3[respCol], monthVal=row3[monthCol], countVal=row3[countCol];
+    var respStr=(respVal||'').toString().trim();
+    var respNorm=normTxt(respVal);
+
+    if(respNorm==='total geral')break; // fim da tabela
+
+    if(respStr && respNorm.indexOf('total')>=0){
+      currentCoord=''; // linha "Coordenador Total": encerra o coordenador atual
+      continue;
+    }
+    if(respStr){
+      currentCoord=respStr;
+      if(!monthly[currentCoord])monthly[currentCoord]={};
+    }
+    if(!currentCoord)continue;
+
+    var mk=mkNorm(monthVal);
+    if(mk && countVal!==null && typeof countVal==='number'){
+      if(!monthly[currentCoord])monthly[currentCoord]={};
+      monthly[currentCoord][mk]=parseInt(countVal);
+    }
+  }
+
+  var totals={};
+  Object.keys(monthly).forEach(function(c){
+    totals[c]=Object.values(monthly[c]).reduce(function(s,v){return s+v;},0);
+  });
+  return {monthly:monthly, totals:totals};
+}
+
 // ── UPLOAD (header-based parser) ──
 function handleUpload(e){
   var file=e.target.files[0]; if(!file)return;
@@ -481,26 +545,23 @@ function handleUpload(e){
       function fh(kws){return hdr.findIndex(function(h){return kws.some(function(k){return (h||'').toLowerCase().indexOf(k.toLowerCase())>=0;});});}
       var iCC=fh(['corretor','VP']),iCV=fh(['valor']),iCM=fh(['visita qualificada']),iCO=fh(['respons']);
 
-      var byC={},coordVQ={};
+      var byC={};
       for(var i=1;i<lrows.length;i++){
         var r=lrows[i];
         var mes=iCM>=0?r[iCM]:null;
         if(!mes||typeof mes!=='string')continue;
         var mk=mkNorm(mes); if(!mk)continue;
         var corretor=((iCC>=0&&r[iCC])||'').toString().trim()||'(sem corretor)';
-        var coord=((iCO>=0&&r[iCO])||'').toString().trim()||'Sem coord.';
         var v=iCV>=0?parseFloat((r[iCV]||'0').toString().replace(',','.'))||0:0;
         if(!byC[corretor])byC[corretor]={qualificadas:0,valor:0,meses:{}};
         byC[corretor].qualificadas++;byC[corretor].valor+=v;
         if(!byC[corretor].meses[mk])byC[corretor].meses[mk]={qtd:0,valor:0};
         byC[corretor].meses[mk].qtd++;byC[corretor].meses[mk].valor+=v;
-        if(!coordVQ[coord])coordVQ[coord]={};
-        if(!coordVQ[coord][mk])coordVQ[coord][mk]={qtd:0,valor:0};
-        coordVQ[coord][mk].qtd++;coordVQ[coord][mk].valor+=v;
       }
       ST.brokers=Object.entries(byC).map(function(e){return Object.assign({corretor:e[0]},e[1]);})
         .sort(function(a,b){return b.qualificadas-a.qualificadas||b.valor-a.valor;});
-      ST.coord_vq=coordVQ;
+      // ST.coord_vq agora e' preenchido mais abaixo, a partir da tabela dinamica
+      // "Visita Qualificada por coordenador" na aba "Ranking Visita Qualificada".
 
       // ── Ranking: monthly + sales + vis_coord totals ──
       var rs=wb.Sheets['Ranking Visita Qualificada'];
@@ -593,50 +654,21 @@ function handleUpload(e){
         if(Object.keys(newS).length)ST.sales=newS;
         console.log('DEBUG - Vendas carregadas:', ST.sales);
 
-        // vis_coord totals: 'X Total' in col J (idx9), count in col L (idx11)
-        var newVCT={};
-        rrows.forEach(function(row){
-          var v9=row[9],v11=row[11];
-          if(v9&&typeof v9==='string'&&v9.indexOf('Total')>=0&&v9.toLowerCase().indexOf('geral')<0){
-            var name=v9.replace('Total','').trim();
-            if(name&&v11!==null&&typeof v11==='number')newVCT[name]=parseInt(v11);
-          }
+        // ── Leitura dinamica das duas tabelas dinamicas por titulo (sem indices fixos) ──
+        var qPivot=findCoordPivot(rrows,'Visita Qualificada por coordenador',mkNorm);
+        var gPivot=findCoordPivot(rrows,'Visitas gerais por coordenador',mkNorm);
+
+        var newCoordVQ={};
+        Object.keys(qPivot.monthly).forEach(function(coord){
+          newCoordVQ[coord]={};
+          Object.keys(qPivot.monthly[coord]).forEach(function(mes){
+            newCoordVQ[coord][mes]={qtd:qPivot.monthly[coord][mes],valor:0};
+          });
         });
-        if(Object.keys(newVCT).length)ST.vis_coord_totals=newVCT;
-        
-        // DEBUG: Check columns J, K, L
-        console.log('=== ESTRUTURA J, K, L (cols 9, 10, 11) ===');
-        for(var ri=19;ri<42;ri++){
-          var row=rrows[ri]||[];
-          console.log(`Linha ${ri}: [9]=${row[9]}, [10]=${row[10]}, [11]=${row[11]}`);
-        }
-        
-        // vis_coord monthly: coordenador + mês + visitas (col J, K, L)
-        var newVCM={};
-        var MONTHS_LIST=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
-        var currentCoord='';
-        rrows.forEach(function(row){
-          var vJ=row[9],vK=row[10],vL=row[11];  // J=9, K=10, L=11
-          
-          // Update coordenador if not null
-          if(vJ && typeof vJ==='string' && vJ.indexOf('Total')<0){
-            currentCoord=vJ.trim();
-          }
-          
-          // Skip Total lines
-          if(!currentCoord || (vK && typeof vK==='string' && vK.indexOf('Total')>=0))return;
-          
-          // Check if vK is a valid month and vL is a number
-          var monthLower=vK&&typeof vK==='string'?vK.trim().toLowerCase():'';
-          if(currentCoord && MONTHS_LIST.indexOf(monthLower)>=0 && vL!==null && typeof vL==='number'){
-            if(!newVCM[currentCoord])newVCM[currentCoord]={};
-            // Convert month name back to proper case for matching
-            var monthProper=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][MONTHS_LIST.indexOf(monthLower)];
-            newVCM[currentCoord][monthProper]=parseInt(vL);
-          }
-        });
-        if(Object.keys(newVCM).length)ST.vis_coord_monthly=newVCM;
-        console.log('DEBUG - vis_coord_monthly:', ST.vis_coord_monthly);
+        if(Object.keys(newCoordVQ).length)ST.coord_vq=newCoordVQ;
+
+        if(Object.keys(gPivot.totals).length)ST.vis_coord_totals=gPivot.totals;
+        if(Object.keys(gPivot.monthly).length)ST.vis_coord_monthly=gPivot.monthly;
       }
 
       ST.month='all';
