@@ -34,7 +34,7 @@ body{background:var(--wine);color:var(--cream);font-family:'Inter',sans-serif;mi
 .gpill:hover{border-color:var(--gold);color:var(--cream)}
 .gpill.active{background:linear-gradient(135deg,var(--gold),var(--gold-l));color:var(--wine-deep);border-color:transparent;font-weight:700}
 .main{padding:28px 32px;max-width:1440px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
-.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+.kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:14px}
 .kpi{background:var(--wine-card);border:1px solid var(--border);border-radius:var(--r);
   padding:20px 18px;position:relative;overflow:hidden;transition:transform .2s}
 .kpi:hover{transform:translateY(-2px)}
@@ -156,6 +156,12 @@ body{background:var(--wine);color:var(--cream);font-family:'Inter',sans-serif;mi
       <div class="kpi-label">Total de Visitas</div>
       <div class="kpi-val" id="kv-vis">0</div>
       <div class="kpi-sub">visitas realizadas</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-icon">&#129309;</div>
+      <div class="kpi-label">Negocia&#231;&#245;es</div>
+      <div class="kpi-val" id="kv-neg">0</div>
+      <div class="kpi-sub">negocia&#231;&#245;es geradas</div>
     </div>
     <div class="kpi">
       <div class="kpi-icon">&#128200;</div>
@@ -280,21 +286,23 @@ function setGlobalMonth(m){
 
 // ── KPIs ──
 function renderKPIs(){
-  var m=ST.month,vq,vis,pct,vendas,volVend;
+  var m=ST.month,vq,vis,neg,pct,vendas,volVend;
   if(m==='all'){
     vq=ST.monthly.reduce(function(s,r){return s+r.qualificadas;},0);
     vis=ST.monthly.reduce(function(s,r){return s+r.visitas;},0);
+    neg=ST.monthly.reduce(function(s,r){return s+(r.negociacoes||0);},0);
     pct=vis>0?Math.round(vq/vis*1000)/10:0;
     vendas=Object.values(ST.sales).reduce(function(s,v){return s+(v.vendas||0);},0);
     volVend=Object.values(ST.sales).reduce(function(s,v){return s+(v.valor||0);},0);
   } else {
     var row=ST.monthly.find(function(r){return r.mes===m;})||{};
-    vq=row.qualificadas||0; vis=row.visitas||0; pct=row.pct||0;
+    vq=row.qualificadas||0; vis=row.visitas||0; neg=row.negociacoes||0; pct=row.pct||0;
     var sv=ST.sales[m]||{vendas:0,valor:0};
     vendas=sv.vendas; volVend=sv.valor;
   }
   animN(document.getElementById('kv-vq'),vq,700);
   animN(document.getElementById('kv-vis'),vis,700);
+  animN(document.getElementById('kv-neg'),neg,700);
   document.getElementById('kv-pct').textContent=pct.toFixed(1).replace('.',',')+String.fromCharCode(37);
   animN(document.getElementById('kv-vend'),vendas,700);
   var vvEl=document.getElementById('kv-vol'),s0=performance.now();
@@ -474,11 +482,13 @@ function findCoordPivot(rows, titleText, mkNorm){
   }
   if(titleRow<0)return {monthly:{},totals:{}};
 
-  // procura o cabecalho "Responsável" a partir da linha do titulo
+  // procura o cabecalho "Responsável" a partir da linha do titulo, numa janela
+  // de colunas proxima ao titulo (evita pegar por engano o cabecalho de uma
+  // tabela vizinha quando esta tabela vier vazia)
   var headerRow=-1, respCol=-1;
   for(var r2=titleRow;r2<Math.min(titleRow+6,rows.length);r2++){
     var row2=rows[r2]||[];
-    for(var c2=titleCol;c2<row2.length;c2++){
+    for(var c2=titleCol;c2<Math.min(titleCol+4,row2.length);c2++){
       if(normTxt(row2[c2])==='responsavel'){headerRow=r2;respCol=c2;break;}
     }
     if(headerRow>=0)break;
@@ -545,7 +555,7 @@ function handleUpload(e){
       function fh(kws){return hdr.findIndex(function(h){return kws.some(function(k){return (h||'').toLowerCase().indexOf(k.toLowerCase())>=0;});});}
       var iCC=fh(['corretor','VP']),iCV=fh(['valor']),iCM=fh(['visita qualificada']),iCO=fh(['respons']);
 
-      var byC={};
+      var byC={},coordVQFallback={};
       for(var i=1;i<lrows.length;i++){
         var r=lrows[i];
         var mes=iCM>=0?r[iCM]:null;
@@ -557,13 +567,21 @@ function handleUpload(e){
         byC[corretor].qualificadas++;byC[corretor].valor+=v;
         if(!byC[corretor].meses[mk])byC[corretor].meses[mk]={qtd:0,valor:0};
         byC[corretor].meses[mk].qtd++;byC[corretor].meses[mk].valor+=v;
+        // fallback: qualificadas por coordenador (usado só se a tabela dinâmica
+        // "Visita Qualificada por coordenador" vier vazia da planilha)
+        var coordFB=((iCO>=0&&r[iCO])||'').toString().trim();
+        if(coordFB){
+          if(!coordVQFallback[coordFB])coordVQFallback[coordFB]={};
+          coordVQFallback[coordFB][mk]=(coordVQFallback[coordFB][mk]||0)+1;
+        }
       }
       ST.brokers=Object.entries(byC).map(function(e){return Object.assign({corretor:e[0]},e[1]);})
         .sort(function(a,b){return b.qualificadas-a.qualificadas||b.valor-a.valor;});
-      // ST.coord_vq agora e' preenchido mais abaixo, a partir da tabela dinamica
-      // "Visita Qualificada por coordenador" na aba "Ranking Visita Qualificada".
+      // ST.coord_vq e' preenchido mais abaixo, priorizando a tabela dinamica
+      // "Visita Qualificada por coordenador"; coordVQFallback so' e' usado se ela vier vazia.
 
       // ── Ranking: monthly + sales + vis_coord totals ──
+      var usedFallback=false;
       var rs=wb.Sheets['Ranking Visita Qualificada'];
       if(rs){
         var rrows=XLSX.utils.sheet_to_json(rs,{header:1,defval:null});
@@ -658,11 +676,20 @@ function handleUpload(e){
         var qPivot=findCoordPivot(rrows,'Visita Qualificada por coordenador',mkNorm);
         var gPivot=findCoordPivot(rrows,'Visitas gerais por coordenador',mkNorm);
 
+        // Se a tabela dinamica "Visita Qualificada por coordenador" vier vazia
+        // (problema comum na exportacao do Google Sheets para xlsx), usa como
+        // fallback os dados calculados diretamente da aba "Limpo".
+        var qMonthly=qPivot.monthly;
+        if(Object.keys(qMonthly).length===0 && Object.keys(coordVQFallback).length>0){
+          qMonthly=coordVQFallback;
+          usedFallback=true;
+        }
+
         var newCoordVQ={};
-        Object.keys(qPivot.monthly).forEach(function(coord){
+        Object.keys(qMonthly).forEach(function(coord){
           newCoordVQ[coord]={};
-          Object.keys(qPivot.monthly[coord]).forEach(function(mes){
-            newCoordVQ[coord][mes]={qtd:qPivot.monthly[coord][mes],valor:0};
+          Object.keys(qMonthly[coord]).forEach(function(mes){
+            newCoordVQ[coord][mes]={qtd:qMonthly[coord][mes],valor:0};
           });
         });
         if(Object.keys(newCoordVQ).length)ST.coord_vq=newCoordVQ;
@@ -674,7 +701,11 @@ function handleUpload(e){
       ST.month='all';
       renderAll();
       document.getElementById('badge-ok').style.display='inline-block';
-      showToast('\u2713 Dashboard atualizado!');
+      if(usedFallback){
+        showToast('\u26a0 Tabela "Visita Qualificada por coordenador" veio vazia da planilha. Usando dados da aba Limpo.');
+      } else {
+        showToast('\u2713 Dashboard atualizado!');
+      }
     }catch(err){showToast('Erro: '+err.message);}
     e.target.value='';
   };
