@@ -192,7 +192,7 @@ body{background:var(--wine);color:var(--cream);font-family:'Inter',sans-serif;mi
       <div class="chart-wrap"><canvas id="monthlyChart"></canvas></div>
     </div>
     <div class="card" style="display:flex;flex-direction:column">
-      <div class="sec-title">P&#243;dio</div>
+      <div class="sec-title" id="podium-title">P&#243;dio Total</div>
       <div class="podium" id="podium"></div>
     </div>
   </div>
@@ -232,6 +232,8 @@ const INIT_VIS_COORD_TOTALS={"Suyane Cachoeira": 38, "Ricardo": 29, "Mateus Cale
 const MONTHS_ORDER=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const MABR={Janeiro:'Jan',Fevereiro:'Fev','Março':'Mar',Abril:'Abr',Maio:'Mai',Junho:'Jun',Julho:'Jul',Agosto:'Ago',Setembro:'Set',Outubro:'Out',Novembro:'Nov',Dezembro:'Dez'};
 const CCLS=['c0','c1','c2','c3'];
+// Nomes que não devem aparecer nos cards de coordenador (ex: lançamentos incorretos na planilha).
+const EXCLUDED_COORDS=['adriano lima'];
 
 let ST={
   monthly:JSON.parse(JSON.stringify(INIT_MONTHLY)),
@@ -280,8 +282,20 @@ function renderPills(){
 function setGlobalMonth(m){
   ST.month=m;
   renderPills();
-  renderKPIs();renderCoords();renderTableSection();
+  renderKPIs();renderCoords();renderPodium();renderTableSection();
   if(ST.chart)highlightChartMonth();
+}
+
+// Retorna os corretores já filtrados pelo mês selecionado (ou pelo total, se 'all'),
+// reaproveitado tanto pelo pódio quanto pela tabela de ranking.
+function getFilteredBrokers(){
+  var m=ST.month;
+  return ST.brokers.map(function(b){
+    if(m==='all')return {corretor:b.corretor,qualificadas:b.qualificadas,valor:b.valor,
+      meses:Object.keys(b.meses).sort(function(a,z){return MONTHS_ORDER.indexOf(a)-MONTHS_ORDER.indexOf(z);})};
+    if(!b.meses[m])return null;
+    return {corretor:b.corretor,qualificadas:b.meses[m].qtd,valor:b.meses[m].valor,meses:[m]};
+  }).filter(Boolean);
 }
 
 // ── KPIs ──
@@ -325,7 +339,9 @@ function renderKPIs(){
 // ── COORDINATOR CARDS ──
 function renderCoords(){
   var m=ST.month;
-  var coords=Object.keys(ST.coord_vq);
+  var coords=Object.keys(ST.coord_vq).filter(function(c){
+    return EXCLUDED_COORDS.indexOf(c.trim().toLowerCase())<0;
+  });
   document.getElementById('coord-row').innerHTML=coords.map(function(coord,ci){
     var vqData=ST.coord_vq[coord]||{};
     var vq_n,vis_n,pctTxt;
@@ -407,7 +423,10 @@ function highlightChartMonth(){
 
 // ── PODIUM ──
 function renderPodium(){
-  var sorted=ST.brokers.slice().sort(function(a,b){return b.qualificadas-a.qualificadas||b.valor-a.valor;});
+  var m=ST.month;
+  document.getElementById('podium-title').textContent=
+    m==='all'?'Pódio Total':'Pódio de '+(m);
+  var sorted=getFilteredBrokers().sort(function(a,b){return b.qualificadas-a.qualificadas||b.valor-a.valor;});
   var t=sorted.slice(0,3);
   var order=[t[1],t[0],t[2]].filter(Boolean);
   var styles=['s','g','b'],cs=['s','g','b'],ht=['p2','p1','p3'],med=['\uD83E\uDD48','\uD83E\uDD47','\uD83E\uDD49'];
@@ -433,13 +452,7 @@ function setSort(s){
 }
 
 function renderTableSection(){
-  var m=ST.month;
-  var data=ST.brokers.map(function(b){
-    if(m==='all')return {corretor:b.corretor,qualificadas:b.qualificadas,valor:b.valor,
-      meses:Object.keys(b.meses).sort(function(a,z){return MONTHS_ORDER.indexOf(a)-MONTHS_ORDER.indexOf(z);})};
-    if(!b.meses[m])return null;
-    return {corretor:b.corretor,qualificadas:b.meses[m].qtd,valor:b.meses[m].valor,meses:[m]};
-  }).filter(Boolean);
+  var data=getFilteredBrokers();
   if(ST.sort==='qualificadas')data.sort(function(a,b){return b.qualificadas-a.qualificadas||b.valor-a.valor;});
   else data.sort(function(a,b){return b.valor-a.valor||b.qualificadas-a.qualificadas;});
   var mx=Math.max.apply(null,data.map(function(d){return d.qualificadas;}).concat([1]));
