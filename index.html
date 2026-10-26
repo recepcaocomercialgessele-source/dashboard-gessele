@@ -1,847 +1,1067 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Painel Comercial Gessele | Performance 2026</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<style>
-:root{--wine:#401E2E;--wine-deep:#2E1520;--wine-mid:#521E38;--wine-card:#4D2235;
-  --gold:#9D855F;--gold-l:#C4A97A;--gold-m:rgba(157,133,95,.18);
-  --cream:#F5ECD9;--muted:rgba(245,236,217,.5);--border:rgba(157,133,95,.22);--r:8px;}
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--wine);color:var(--cream);font-family:'Inter',sans-serif;min-height:100vh}
-.hdr{background:var(--wine-deep);border-bottom:1px solid var(--border);padding:16px 32px;
-  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.hdr-left{display:flex;align-items:center;gap:20px}
-.logo{height:56px}
-.hdr-title h1{font-family:'Cinzel',serif;font-size:1.2rem;font-weight:700;color:var(--gold-l);letter-spacing:.06em;line-height:1.2}
-.hdr-title p{font-size:.72rem;color:var(--muted);letter-spacing:.1em;margin-top:2px}
-.upbtn{display:flex;align-items:center;gap:7px;background:linear-gradient(135deg,var(--gold),var(--gold-l));
-  color:var(--wine-deep);font-weight:700;font-size:.78rem;letter-spacing:.05em;
-  padding:9px 18px;border-radius:var(--r);border:none;cursor:pointer;transition:opacity .2s;font-family:'Inter',sans-serif}
-.upbtn:hover{opacity:.85}
-#file-input{display:none}
-.filter-bar{background:var(--wine-deep);border-bottom:1px solid var(--border);
-  padding:10px 32px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.filter-bar label{font-size:.68rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-right:4px}
-.gpill{background:var(--gold-m);border:1px solid var(--border);color:var(--muted);
-  font-size:.73rem;font-weight:600;letter-spacing:.05em;padding:5px 16px;border-radius:20px;
-  cursor:pointer;transition:all .18s;font-family:'Inter',sans-serif}
-.gpill:hover{border-color:var(--gold);color:var(--cream)}
-.gpill.active{background:linear-gradient(135deg,var(--gold),var(--gold-l));color:var(--wine-deep);border-color:transparent;font-weight:700}
-.main{padding:28px 32px;max-width:1440px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
-.kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:14px}
-.kpi{background:var(--wine-card);border:1px solid var(--border);border-radius:var(--r);
-  padding:20px 18px;position:relative;overflow:hidden;transition:transform .2s}
-.kpi:hover{transform:translateY(-2px)}
-.kpi::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--gold),var(--gold-l))}
-.kpi-icon{font-size:1.3rem;margin-bottom:6px}
-.kpi-label{font-size:.67rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
-.kpi-val{font-family:'Cinzel',serif;font-size:1.85rem;font-weight:700;color:var(--gold-l);line-height:1.1;margin-top:3px}
-.kpi-sub{font-size:.68rem;color:var(--muted);margin-top:3px}
-.sec-title{font-family:'Cinzel',serif;font-size:.9rem;font-weight:700;color:var(--gold-l);
-  letter-spacing:.06em;margin-bottom:14px;display:flex;align-items:center;gap:10px}
-.sec-title::after{content:'';flex:1;height:1px;background:var(--border)}
-.coord-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-.coord-card{background:var(--wine-card);border:1px solid var(--border);border-radius:var(--r);padding:20px 18px;position:relative;overflow:hidden}
-.coord-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
-.c0::before{background:linear-gradient(90deg,var(--gold),var(--gold-l))}
-.c1::before{background:linear-gradient(90deg,#5B8FA8,#8DC5D8)}
-.c2::before{background:linear-gradient(90deg,#A87A5B,#CF9F7D)}
-.c3::before{background:linear-gradient(90deg,#7A8A5B,#9FAF7D)}
-.coord-name{font-family:'Cinzel',serif;font-size:.8rem;font-weight:700;color:var(--gold-l);
-  letter-spacing:.04em;margin-bottom:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.coord-stats{display:flex;gap:10px;margin-bottom:10px}
-.coord-stat{flex:1;text-align:center}
-.csval{font-family:'Cinzel',serif;font-size:1.5rem;font-weight:700;line-height:1}
-.csval.gold{color:var(--gold-l)}.csval.dim{color:rgba(245,236,217,.45)}
-.cslabel{font-size:.62rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:3px}
-.cdivider{width:1px;background:var(--border);align-self:stretch;margin:4px 0}
-.cbar-wrap{background:rgba(157,133,95,.12);border-radius:4px;height:5px;overflow:hidden;margin-top:4px}
-.cbar{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-l));border-radius:4px;transition:width .7s cubic-bezier(.4,0,.2,1)}
-.cpct{font-size:.7rem;color:var(--gold-l);font-weight:600;margin-top:5px;text-align:right}
-.mid{display:grid;grid-template-columns:1fr 300px;gap:18px}
-.card{background:var(--wine-card);border:1px solid var(--border);border-radius:var(--r);padding:22px}
-.chart-wrap{position:relative;height:230px}
-.podium{display:flex;align-items:flex-end;justify-content:center;gap:6px;flex:1;padding-top:12px}
-.ps{display:flex;flex-direction:column;align-items:center;width:82px;transition:transform .2s}
-.ps:hover{transform:translateY(-3px)}
-.pav{border-radius:50%;display:flex;align-items:center;justify-content:center;
-  font-family:'Cinzel',serif;font-weight:700;color:var(--wine-deep);position:relative;margin-bottom:5px}
-.pav.g{background:linear-gradient(135deg,#C4A97A,#F0D080);width:56px;height:56px;font-size:1.15rem;box-shadow:0 4px 18px rgba(196,169,122,.35)}
-.pav.s{background:linear-gradient(135deg,#999,#ccc);width:48px;height:48px;font-size:1rem}
-.pav.b{background:linear-gradient(135deg,#A0622A,#CD9050);width:44px;height:44px;font-size:.9rem}
-.crown{position:absolute;top:-13px;font-size:.9rem}
-.pname{font-size:.63rem;font-weight:600;text-align:center;color:var(--cream);line-height:1.2;margin-bottom:3px}
-.pcnt{font-family:'Cinzel',serif;font-size:1rem;font-weight:700}
-.pcnt.g{color:var(--gold-l)}.pcnt.s{color:#C8C8C8}.pcnt.b{color:#CD8050}
-.pplat{border-radius:4px 4px 0 0;width:100%;display:flex;align-items:center;justify-content:center;margin-top:6px}
-.pplat.p1{height:62px;background:rgba(196,169,122,.15);border:1px solid rgba(196,169,122,.25)}
-.pplat.p2{height:46px;background:rgba(255,255,255,.06)}
-.pplat.p3{height:32px;background:rgba(255,255,255,.04)}
-.pval{font-size:.6rem;color:var(--muted);margin-top:2px;text-align:center}
-.ranking-card{background:var(--wine-card);border:1px solid var(--border);border-radius:var(--r);padding:22px}
-.sort-tog{display:flex;background:var(--wine-mid);border-radius:6px;overflow:hidden;border:1px solid var(--border)}
-.stbtn{padding:5px 14px;font-size:.7rem;font-weight:700;cursor:pointer;color:var(--muted);
-  border:none;background:transparent;font-family:'Inter',sans-serif;transition:all .18s}
-.stbtn.active{background:var(--gold-m);color:var(--gold-l)}
-.tbl{width:100%;border-collapse:collapse}
-.tbl th{font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--gold);padding:9px 10px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}
-.tbl th.r{text-align:right}
-.tbl td{padding:10px 10px;font-size:.8rem;color:var(--cream);border-bottom:1px solid rgba(157,133,95,.07);vertical-align:middle}
-.tbl tr:hover td{background:var(--gold-m)}
-.tbl tr:nth-child(odd) td{background:rgba(0,0,0,.05)}
-.tbl tr:nth-child(odd):hover td{background:var(--gold-m)}
-.rk{font-family:'Cinzel',serif;font-weight:700;text-align:center;width:32px}
-.vqn{font-family:'Cinzel',serif;font-size:1.05rem;font-weight:700;color:var(--gold-l);text-align:center}
-.vr{text-align:right;color:rgba(245,236,217,.7)}
-.bw{background:rgba(157,133,95,.1);border-radius:3px;height:5px;overflow:hidden;min-width:80px}
-.bb{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-l));border-radius:3px;transition:width .5s}
-.mb{background:var(--gold-m);border:1px solid rgba(157,133,95,.3);color:var(--gold-l);
-  font-size:.62rem;font-weight:600;padding:2px 7px;border-radius:10px;white-space:nowrap}
-.mbs{display:flex;gap:3px;flex-wrap:wrap}
-.empty{text-align:center;padding:40px;color:var(--muted);font-style:italic}
-.badge-ok{display:none;background:var(--gold-m);border:1px solid var(--gold);color:var(--gold-l);font-size:.7rem;padding:4px 10px;border-radius:20px}
-.toast{position:fixed;bottom:22px;right:22px;background:var(--wine-deep);border:1px solid var(--gold);
-  color:var(--gold-l);padding:12px 18px;border-radius:var(--r);font-size:.8rem;font-weight:500;
-  display:none;z-index:999;box-shadow:0 8px 32px rgba(0,0,0,.4)}
-.toast.show{display:block;animation:fi .25s ease}
-@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.footer{text-align:center;padding:20px;font-size:.7rem;color:var(--muted);border-top:1px solid var(--border)}
-@media(max-width:1100px){.mid{grid-template-columns:1fr}.coord-row{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:720px){.kpi-row{grid-template-columns:repeat(2,1fr)}.main{padding:16px}}
-@media(max-width:480px){.kpi-row{grid-template-columns:1fr}.coord-row{grid-template-columns:1fr}}
-</style>
-</head>
-<body>
-<header class="hdr">
-  <div class="hdr-left">
-    <img class="logo" src="data:image/jpeg;base64,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" alt="Gessele">
-    <div class="hdr-title">
-      <h1>Painel Comercial Gessele</h1>
-      <p>Performance 2026 &bull; Gessele Empreendimentos</p>
-    </div>
-  </div>
-  <div style="display:flex;align-items:center;gap:10px">
-    <span class="badge-ok" id="badge-ok">&#10003; Atualizado</span>
-    <button class="upbtn" onclick="document.getElementById('file-input').click()">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-        <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-      </svg>
-      Atualizar Dados
-    </button>
-    <input type="file" id="file-input" accept=".xlsx" onchange="handleUpload(event)">
-  </div>
-</header>
-<div class="filter-bar">
-  <label>Filtrar por</label>
-  <div id="filter-pills" style="display:flex;gap:6px;flex-wrap:wrap"></div>
-</div>
-<div class="main">
-  <div class="kpi-row">
-    <div class="kpi">
-      <div class="kpi-icon">&#127942;</div>
-      <div class="kpi-label">Visitas Qualificadas</div>
-      <div class="kpi-val" id="kv-vq">0</div>
-      <div class="kpi-sub">propostas na mesa</div>
-    </div>
-    <div class="kpi">
-      <div class="kpi-icon">&#128065;</div>
-      <div class="kpi-label">Total de Visitas</div>
-      <div class="kpi-val" id="kv-vis">0</div>
-      <div class="kpi-sub">visitas realizadas</div>
-    </div>
-    <div class="kpi">
-      <div class="kpi-icon">&#129309;</div>
-      <div class="kpi-label">Negocia&#231;&#245;es</div>
-      <div class="kpi-val" id="kv-neg">0</div>
-      <div class="kpi-sub">negocia&#231;&#245;es geradas</div>
-    </div>
-    <div class="kpi">
-      <div class="kpi-icon">&#128200;</div>
-      <div class="kpi-label">Convers&#227;o</div>
-      <div class="kpi-val" id="kv-pct">0%</div>
-      <div class="kpi-sub">qualif. / visitas</div>
-    </div>
-    <div class="kpi">
-      <div class="kpi-icon">&#127968;</div>
-      <div class="kpi-label">N&#186; de Vendas</div>
-      <div class="kpi-val" id="kv-vend">0</div>
-      <div class="kpi-sub">unidades vendidas</div>
-    </div>
-    <div class="kpi">
-      <div class="kpi-icon">&#128181;</div>
-      <div class="kpi-label">Volume Vendido</div>
-      <div class="kpi-val" id="kv-vol" style="font-size:1.4rem">R$ 0</div>
-      <div class="kpi-sub">valor das vendas fechadas</div>
-    </div>
-  </div>
-  <div>
-    <div class="sec-title">Visitas por Coordenador</div>
-    <div class="coord-row" id="coord-row"></div>
-  </div>
-  <div class="mid">
-    <div class="card">
-      <div class="sec-title">Evolu&#231;&#227;o Mensal</div>
-      <div class="chart-wrap"><canvas id="monthlyChart"></canvas></div>
-    </div>
-    <div class="card" style="display:flex;flex-direction:column">
-      <div class="sec-title" id="podium-title">P&#243;dio Total</div>
-      <div class="podium" id="podium"></div>
-    </div>
-  </div>
-  <div class="ranking-card">
-    <div class="sec-title">Ranking de Corretores</div>
-    <div style="display:flex;justify-content:flex-end;margin-bottom:14px">
-      <div class="sort-tog">
-        <button class="stbtn active" id="sv" onclick="setSort('qualificadas')">&#128200; VQ</button>
-        <button class="stbtn" id="sr" onclick="setSort('valor')">&#128181; Valor</button>
-      </div>
-    </div>
-    <div style="overflow-x:auto">
-      <table class="tbl">
-        <thead>
-          <tr>
-            <th style="width:34px">#</th>
-            <th>Corretor</th>
-            <th style="text-align:center">VQ</th>
-            <th style="min-width:90px">Progresso</th>
-            <th class="r" style="min-width:160px">Valor Negociado</th>
-            <th style="min-width:160px">Meses</th>
-          </tr>
-        </thead>
-        <tbody id="tbody"></tbody>
-      </table>
-    </div>
-    <div id="ver-mais-wrap" style="text-align:center;margin-top:14px;display:none">
-      <button class="stbtn" id="ver-mais-btn" onclick="toggleVerMais()"></button>
-    </div>
-  </div>
-  <div class="ranking-card" id="parc-sec">
-    <div class="sec-title" id="parc-title">Parceiros</div>
-    <div id="parc-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-bottom:18px"></div>
-    <div style="overflow-x:auto">
-      <table class="tbl">
-        <thead>
-          <tr>
-            <th>Coordenador</th>
-            <th style="text-align:center">Visitas carteira</th>
-            <th style="text-align:center">Treinamento fora</th>
-            <th style="text-align:center">Treinamentos totais</th>
-            <th style="text-align:center">Corretores impactados</th>
-          </tr>
-        </thead>
-        <tbody id="parc-body"></tbody>
-      </table>
-    </div>
-  </div>
-</div>
-<div class="footer">Gessele Empreendimentos &bull; Painel Comercial Gessele | Performance 2026</div>
-<div class="toast" id="toast"></div>
-<script>
-const INIT_BROKERS=[{"corretor": "Anna Vargas", "qualificadas": 5, "valor": 25414002.0, "meses": {"Fevereiro": {"qtd": 2, "valor": 17626000.0}, "Março": {"qtd": 1, "valor": 7788000.0}, "Abril": {"qtd": 2, "valor": 2.0}}}, {"corretor": "Jeferson Medeiros", "qualificadas": 5, "valor": 18164000.0, "meses": {"Abril": {"qtd": 2, "valor": 8138000.0}, "Maio": {"qtd": 3, "valor": 10026000.0}}}, {"corretor": "Luan Almeida", "qualificadas": 4, "valor": 15888000.0, "meses": {"Fevereiro": {"qtd": 2, "valor": 1800000.0}, "Janeiro": {"qtd": 2, "valor": 14088000.0}}}, {"corretor": "Vinicius Amorin", "qualificadas": 3, "valor": 8838000.0, "meses": {"Janeiro": {"qtd": 1, "valor": 2588000.0}, "Fevereiro": {"qtd": 1, "valor": 0.0}, "Abril": {"qtd": 1, "valor": 6250000.0}}}, {"corretor": "Josi Palmasola", "qualificadas": 3, "valor": 19536400.0, "meses": {"Fevereiro": {"qtd": 2, "valor": 13043200.0}, "Março": {"qtd": 1, "valor": 6493200.0}}}, {"corretor": "Ocsandro", "qualificadas": 3, "valor": 24414000.0, "meses": {"Janeiro": {"qtd": 2, "valor": 16276000.0}, "Março": {"qtd": 1, "valor": 8138000.0}}}, {"corretor": "Carla Regina Moser", "qualificadas": 3, "valor": 14748001.0, "meses": {"Janeiro": {"qtd": 2, "valor": 14748000.0}, "Maio": {"qtd": 1, "valor": 1.0}}}, {"corretor": "Fabio Bulhões", "qualificadas": 3, "valor": 5488000.0, "meses": {"Fevereiro": {"qtd": 2, "valor": 2588000.0}, "Janeiro": {"qtd": 1, "valor": 2900000.0}}}, {"corretor": "Junior Leão", "qualificadas": 3, "valor": 14637000.0, "meses": {"Fevereiro": {"qtd": 2, "valor": 6899000.0}, "Janeiro": {"qtd": 1, "valor": 7738000.0}}}, {"corretor": "Barbara Goettems", "qualificadas": 3, "valor": 22554000.0, "meses": {"Fevereiro": {"qtd": 1, "valor": 6778000.0}, "Março": {"qtd": 2, "valor": 15776000.0}}}, {"corretor": "João Furtado", "qualificadas": 2, "valor": 13336000.0, "meses": {"Janeiro": {"qtd": 1, "valor": 7388000.0}, "Fevereiro": {"qtd": 1, "valor": 5948000.0}}}, {"corretor": "Diego Farensena", "qualificadas": 2, "valor": 14429000.0, "meses": {"Janeiro": {"qtd": 2, "valor": 14429000.0}}}, {"corretor": "Gabriela Zaggo", "qualificadas": 2, "valor": 6628001.0, "meses": {"Março": {"qtd": 1, "valor": 6628000.0}, "Abril": {"qtd": 1, "valor": 1.0}}}, {"corretor": "Jeferson", "qualificadas": 2, "valor": 3000000.0, "meses": {"Abril": {"qtd": 1, "valor": 3000000.0}, "Maio": {"qtd": 1, "valor": 0.0}}}, {"corretor": "Alexa Martins", "qualificadas": 2, "valor": 28634000.0, "meses": {"Maio": {"qtd": 2, "valor": 28634000.0}}}, {"corretor": "Cleber Neckel", "qualificadas": 1, "valor": 8500000.0, "meses": {"Março": {"qtd": 1, "valor": 8500000.0}}}, {"corretor": "Lucas Cabedal", "qualificadas": 1, "valor": 8278000.0, "meses": {"Março": {"qtd": 1, "valor": 8278000.0}}}, {"corretor": "Lisandra Diefenthaeler", "qualificadas": 1, "valor": 10000000.0, "meses": {"Janeiro": {"qtd": 1, "valor": 10000000.0}}}, {"corretor": "Angelo Cattoni", "qualificadas": 1, "valor": 0.0, "meses": {"Fevereiro": {"qtd": 1, "valor": 0.0}}}, {"corretor": "Emerson", "qualificadas": 1, "valor": 7838000.0, "meses": {"Fevereiro": {"qtd": 1, "valor": 7838000.0}}}, {"corretor": "Bruna Ribeiro", "qualificadas": 1, "valor": 9388000.0, "meses": {"Janeiro": {"qtd": 1, "valor": 9388000.0}}}, {"corretor": "Flavio Correa", "qualificadas": 1, "valor": 7788000.0, "meses": {"Janeiro": {"qtd": 1, "valor": 7788000.0}}}, {"corretor": "Rodolfo", "qualificadas": 1, "valor": 5500000.0, "meses": {"Janeiro": {"qtd": 1, "valor": 5500000.0}}}, {"corretor": "João Junior", "qualificadas": 1, "valor": 7788000.0, "meses": {"Março": {"qtd": 1, "valor": 7788000.0}}}, {"corretor": "Giovana Monteiro", "qualificadas": 1, "valor": 5500000.0, "meses": {"Janeiro": {"qtd": 1, "valor": 5500000.0}}}, {"corretor": "Carlos Gamarra", "qualificadas": 1, "valor": 0.0, "meses": {"Fevereiro": {"qtd": 1, "valor": 0.0}}}, {"corretor": "Carine Bottene", "qualificadas": 1, "valor": 6213200.0, "meses": {"Janeiro": {"qtd": 1, "valor": 6213200.0}}}, {"corretor": "Henrique Silveira", "qualificadas": 1, "valor": 6628000.0, "meses": {"Fevereiro": {"qtd": 1, "valor": 6628000.0}}}, {"corretor": "Vinícius Imperial", "qualificadas": 1, "valor": 7888000.0, "meses": {"Janeiro": {"qtd": 1, "valor": 7888000.0}}}, {"corretor": "Marcel Campos", "qualificadas": 1, "valor": 8400000.0, "meses": {"Fevereiro": {"qtd": 1, "valor": 8400000.0}}}, {"corretor": "Fernando", "qualificadas": 1, "valor": 7578000.0, "meses": {"Janeiro": {"qtd": 1, "valor": 7578000.0}}}, {"corretor": "Bruno Teixeira", "qualificadas": 1, "valor": 4938000.0, "meses": {"Fevereiro": {"qtd": 1, "valor": 4938000.0}}}, {"corretor": "Natalie Ribas", "qualificadas": 1, "valor": 3388000.0, "meses": {"Janeiro": {"qtd": 1, "valor": 3388000.0}}}, {"corretor": "Pablo Ramires", "qualificadas": 1, "valor": 5906600.0, "meses": {"Janeiro": {"qtd": 1, "valor": 5906600.0}}}, {"corretor": "Daniel Oliveira", "qualificadas": 1, "valor": 6500000.0, "meses": {"Fevereiro": {"qtd": 1, "valor": 6500000.0}}}, {"corretor": "Wagner", "qualificadas": 1, "valor": 9338000.0, "meses": {"Março": {"qtd": 1, "valor": 9338000.0}}}, {"corretor": "Angelo", "qualificadas": 1, "valor": 0.0, "meses": {"Fevereiro": {"qtd": 1, "valor": 0.0}}}, {"corretor": "Gustavo Dal Piva", "qualificadas": 1, "valor": 3588000.0, "meses": {"Janeiro": {"qtd": 1, "valor": 3588000.0}}}, {"corretor": "Cleiton Farias", "qualificadas": 1, "valor": 6200000.0, "meses": {"Fevereiro": {"qtd": 1, "valor": 6200000.0}}}, {"corretor": "Robert Marques", "qualificadas": 1, "valor": 3668000.0, "meses": {"Março": {"qtd": 1, "valor": 3668000.0}}}, {"corretor": "Fernando Erthal", "qualificadas": 1, "valor": 3788000.0, "meses": {"Fevereiro": {"qtd": 1, "valor": 3788000.0}}}, {"corretor": "Kauê Karraro", "qualificadas": 1, "valor": 0.0, "meses": {"Janeiro": {"qtd": 1, "valor": 0.0}}}, {"corretor": "Simone Duarte", "qualificadas": 1, "valor": 8438000.0, "meses": {"Março": {"qtd": 1, "valor": 8438000.0}}}, {"corretor": "Allen Ramos", "qualificadas": 1, "valor": 5398000.0, "meses": {"Janeiro": {"qtd": 1, "valor": 5398000.0}}}, {"corretor": "Renato Lazarotto", "qualificadas": 1, "valor": 6493200.0, "meses": {"Março": {"qtd": 1, "valor": 6493200.0}}}, {"corretor": "Eduardo Castamann", "qualificadas": 1, "valor": 2550000.0, "meses": {"Março": {"qtd": 1, "valor": 2550000.0}}}, {"corretor": "Lucas Rocha", "qualificadas": 1, "valor": 7938000.0, "meses": {"Março": {"qtd": 1, "valor": 7938000.0}}}, {"corretor": "Sasse Imobank", "qualificadas": 1, "valor": 7138000.0, "meses": {"Abril": {"qtd": 1, "valor": 7138000.0}}}, {"corretor": "Diego Dutra", "qualificadas": 1, "valor": 6938000.0, "meses": {"Abril": {"qtd": 1, "valor": 6938000.0}}}, {"corretor": "gessele", "qualificadas": 1, "valor": 0.0, "meses": {"Abril": {"qtd": 1, "valor": 0.0}}}, {"corretor": "Evandro", "qualificadas": 1, "valor": 4338000.0, "meses": {"Abril": {"qtd": 1, "valor": 4338000.0}}}, {"corretor": "Felipe Perin", "qualificadas": 1, "valor": 6493000.0, "meses": {"Abril": {"qtd": 1, "valor": 6493000.0}}}, {"corretor": "Lucas Rocha/Ocsandro Rossi", "qualificadas": 1, "valor": 17776000.0, "meses": {"Abril": {"qtd": 1, "valor": 17776000.0}}}, {"corretor": "Lidy Nogueira Vilela", "qualificadas": 1, "valor": 1.0, "meses": {"Abril": {"qtd": 1, "valor": 1.0}}}, {"corretor": "Tiago Messias", "qualificadas": 1, "valor": 1.0, "meses": {"Abril": {"qtd": 1, "valor": 1.0}}}, {"corretor": "Kelwin Eggert", "qualificadas": 1, "valor": 5298000.0, "meses": {"Abril": {"qtd": 1, "valor": 5298000.0}}}, {"corretor": "Minéia", "qualificadas": 1, "valor": 39564000.0, "meses": {"Abril": {"qtd": 1, "valor": 39564000.0}}}, {"corretor": "Felipe Tavares", "qualificadas": 1, "valor": 8338000.0, "meses": {"Maio": {"qtd": 1, "valor": 8338000.0}}}, {"corretor": "Mateus Reginatto", "qualificadas": 1, "valor": 1.0, "meses": {"Maio": {"qtd": 1, "valor": 1.0}}}, {"corretor": "Marcelo Noronha", "qualificadas": 1, "valor": 6050000.0, "meses": {"Junho": {"qtd": 1, "valor": 6050000.0}}}];
-const INIT_MONTHLY=[{"mes": "Janeiro", "negociacoes": 100, "visitas": 72, "qualificadas": 26, "pct": 36.11111111111111}, {"mes": "Fevereiro", "negociacoes": 56, "visitas": 41, "qualificadas": 23, "pct": 56.09756097560976}, {"mes": "Março", "negociacoes": 35, "visitas": 20, "qualificadas": 15, "pct": 75.0}, {"mes": "Abril", "negociacoes": 34, "visitas": 26, "qualificadas": 22, "pct": 84.61538461538461}, {"mes": "Maio", "negociacoes": 21, "visitas": 20, "qualificadas": 10, "pct": 50.0}, {"mes": "Junho", "negociacoes": 24, "visitas": 13, "qualificadas": 11, "pct": 84.61538461538461}, {"mes": "Julho", "negociacoes": 0, "visitas": 0, "qualificadas": 0, "pct": 0.0}, {"mes": "Agosto", "negociacoes": 0, "visitas": 0, "qualificadas": 0, "pct": 0.0}, {"mes": "Setembro", "negociacoes": 0, "visitas": 0, "qualificadas": 0, "pct": 0.0}, {"mes": "Outubro", "negociacoes": 0, "visitas": 0, "qualificadas": 0, "pct": 0.0}, {"mes": "Novembro", "negociacoes": 0, "visitas": 0, "qualificadas": 0, "pct": 0.0}, {"mes": "Dezembro", "negociacoes": 0, "visitas": 0, "qualificadas": 0, "pct": 0.0}];
-const INIT_SALES={"Abril": {"vendas": 0, "valor": 0}, "Fevereiro": {"vendas": 0, "valor": 0}, "Janeiro": {"vendas": 0, "valor": 0}, "Junho": {"vendas": 0, "valor": 0}, "Maio": {"vendas": 0, "valor": 0}, "Março": {"vendas": 0, "valor": 0}};
-const INIT_COORD_VQ={"Suyane Cachoeira": {"Janeiro": {"qtd": 9, "valor": 62125200.0}, "Março": {"qtd": 8, "valor": 61561200.0}, "Fevereiro": {"qtd": 9, "valor": 65833200.0}, "Abril": {"qtd": 9, "valor": 36505005.0}, "Maio": {"qtd": 2, "valor": 8338001.0}, "Junho": {"qtd": 1, "valor": 6050000.0}}, "Ricardo": {"Janeiro": {"qtd": 11, "valor": 61135600.0}, "Fevereiro": {"qtd": 12, "valor": 22853000.0}, "Março": {"qtd": 3, "valor": 23969200.0}, "Abril": {"qtd": 2, "valor": 43902000.0}, "Maio": {"qtd": 1, "valor": 1.0}}, "Mateus Calebi": {"Março": {"qtd": 4, "valor": 22284000.0}, "Janeiro": {"qtd": 5, "valor": 35030000.0}, "Fevereiro": {"qtd": 2, "valor": 10288000.0}, "Abril": {"qtd": 5, "valor": 24526000.0}, "Maio": {"qtd": 6, "valor": 38660000.0}}, "Adriano LIma": {"Abril": {"qtd": 1, "valor": 0.0}}};
-const INIT_VIS_COORD_TOTALS={"Suyane Cachoeira": 38, "Ricardo": 29, "Mateus Calebi": 22, "Adriano LIma": 1};
-const MONTHS_ORDER=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-const MABR={Janeiro:'Jan',Fevereiro:'Fev','Março':'Mar',Abril:'Abr',Maio:'Mai',Junho:'Jun',Julho:'Jul',Agosto:'Ago',Setembro:'Set',Outubro:'Out',Novembro:'Nov',Dezembro:'Dez'};
-const CCLS=['c0','c1','c2','c3'];
-// Nomes que não devem aparecer nos cards de coordenador (ex: lançamentos incorretos na planilha).
-const EXCLUDED_COORDS=['adriano lima'];
+/**
+ * Dashboard Gessele - Ranking Visita Qualificada
+ * -----------------------------------------------
+ * Este script le direto as abas "Limpo" e "Ranking Visita Qualificada"
+ * desta planilha e devolve um JSON pronto para o dashboard, no formato
+ * que o site ja espera (mesma estrutura do INIT_BROKERS / INIT_MONTHLY
+ * / INIT_SALES / INIT_COORD_VQ que hoje ficam fixos dentro do HTML).
+ *
+ * Como usar:
+ * 1. Nesta planilha, va em Extensions > Apps Script.
+ * 2. Apague o conteudo do arquivo Code.gs que abrir e cole este arquivo inteiro.
+ * 3. Clique em Implantar > Nova implantacao.
+ * 4. Tipo: Aplicativo da Web (Web app).
+ * 5. Executar como: Eu (seu usuario).
+ * 6. Quem tem acesso: Qualquer pessoa (Anyone).
+ * 7. Implantar, autorize as permissoes pedidas, e copie a URL gerada
+ *    (termina em /exec).
+ * 8. Cole essa URL na constante APPS_SCRIPT_URL dentro do index.html do
+ *    dashboard (no GitHub) e suba a alteracao. O Vercel publica sozinho.
+ *
+ * Sempre que a planilha for editada, o proximo carregamento (ou o
+ * refresh automatico a cada 5 min) do dashboard vai refletir os dados
+ * atuais, sem precisar baixar/subir arquivo nenhum.
+ */
 
-let ST={
-  monthly:JSON.parse(JSON.stringify(INIT_MONTHLY)),
-  brokers:JSON.parse(JSON.stringify(INIT_BROKERS)),
-  sales:JSON.parse(JSON.stringify(INIT_SALES)),
-  coord_vq:JSON.parse(JSON.stringify(INIT_COORD_VQ)),
-  vis_coord_totals:JSON.parse(JSON.stringify(INIT_VIS_COORD_TOTALS)),
-  month:'all', sort:'qualificadas', chart:null
+var MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho',
+              'Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+function doGet(e) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var payload;
+  try {
+    if (e && e.parameter && e.parameter.dump === 'limpo') {
+      payload = dumpLimpo(ss);
+    } else if (e && e.parameter && e.parameter.dump === 'visitasgerais') {
+      payload = dumpVisitasGerais(ss);
+    } else if (e && e.parameter && e.parameter.dump === 'config') {
+      var cfg = ss.getSheetByName('Config');
+      payload = { ultimaAtualizacao: cfg ? String(cfg.getRange(1, 2).getValue() || '') : '' };
+      if (cfg && cfg.getRange(1, 2).getValue() instanceof Date) {
+        payload.ultimaAtualizacao = Utilities.formatDate(cfg.getRange(1, 2).getValue(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+      }
+    } else if (e && e.parameter && e.parameter.dump === 'parceiros') {
+      var ps = ss.getSheetByName('Parceiros Dados');
+      payload = { rows: ps && ps.getLastRow() > 0 ? ps.getRange(1, 1, ps.getLastRow(), 14).getValues() : [] };
+    } else if (e && e.parameter && e.parameter.dump === 'headers') {
+      var vg = ss.getSheetByName('Visitas Gerais');
+      payload = { headers: vg ? vg.getRange(1, 1, 1, vg.getLastColumn()).getValues()[0] : null };
+    } else {
+      payload = buildDashboardData(ss);
+    }
+  } catch (err) {
+    payload = { error: err.message };
+  }
+  return ContentService
+    .createTextOutput(JSON.stringify(payload))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// Exporta as linhas cruas da aba "Limpo" (com índice de linha e RD_ID atual, se houver),
+// usado só para conferência/backfill manual, nunca pelo dashboard em si.
+function dumpLimpo(ss) {
+  var limpo = ss.getSheetByName('Limpo');
+  if (!limpo) throw new Error('Aba "Limpo" não encontrada.');
+  var idCol = ensureRdIdHeader(limpo);
+  var rows = limpo.getDataRange().getValues();
+  var out = [];
+  for (var r = 1; r < rows.length; r++) {
+    var row = rows[r];
+    if (!row[0] && !row[2]) continue; // linha vazia
+    out.push({
+      rowIndex: r + 1,
+      nome: row[0],
+      empresa: row[1],
+      corretor: row[2],
+      valor: row[3],
+      mes: row[4],
+      responsavel: row[5],
+      rdId: row[idCol - 1] || ''
+    });
+  }
+  return { rows: out };
+}
+
+// Exporta as linhas cruas da aba "Visitas Gerais", só para conferência/reconciliação manual.
+function dumpVisitasGerais(ss) {
+  var sheet = ss.getSheetByName('Visitas Gerais');
+  if (!sheet) throw new Error('Aba "Visitas Gerais" não encontrada.');
+  var col = getVisGeralColumns(sheet);
+  var rows = sheet.getDataRange().getValues();
+  var out = [];
+  for (var r = 1; r < rows.length; r++) {
+    var row = rows[r];
+    var nome = col.nome ? row[col.nome - 1] : '';
+    var corretor = col.corretor ? row[col.corretor - 1] : '';
+    if (!nome && !corretor) continue;
+    out.push({
+      rowIndex: r + 1,
+      nome: nome,
+      corretor: corretor,
+      valor: col.valor ? row[col.valor - 1] : '',
+      mes: col.mes ? row[col.mes - 1] : '',
+      responsavel: col.responsavel ? row[col.responsavel - 1] : '',
+      rdId: col.rdId ? row[col.rdId - 1] : ''
+    });
+  }
+  return { rows: out };
+}
+
+// Funcao auxiliar para testar manualmente pelo editor do Apps Script
+// (selecione "testRun" no menu de funcoes e clique em Executar).
+function testRun() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  Logger.log(JSON.stringify(buildDashboardData(ss), null, 2));
+}
+
+function normTxt(s) {
+  return (s == null ? '' : s.toString())
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function mkNorm(s) {
+  var n = normTxt(s);
+  for (var i = 0; i < MONTHS.length; i++) {
+    if (normTxt(MONTHS[i]) === n) return MONTHS[i];
+  }
+  return null;
+}
+
+function findHeaderIndex(headerRow, keywords) {
+  for (var c = 0; c < headerRow.length; c++) {
+    var h = normTxt(headerRow[c]);
+    if (!h) continue;
+    for (var k = 0; k < keywords.length; k++) {
+      if (h.indexOf(normTxt(keywords[k])) >= 0) return c;
+    }
+  }
+  return -1;
+}
+
+function parseMoneyBR(v) {
+  if (typeof v === 'number') return v;
+  if (!v) return 0;
+  var s = v.toString().replace('R$', '').replace(/\./g, '').replace(',', '.');
+  var n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+}
+
+function buildDashboardData(ss) {
+  var limpo = ss.getSheetByName('Limpo');
+  if (!limpo) throw new Error('Aba "Limpo" não encontrada na planilha.');
+  var ranking = ss.getSheetByName('Ranking Visita Qualificada');
+
+  var limpoRows = limpo.getDataRange().getValues();
+  var brokerResult = readBrokers(limpoRows);
+
+  var monthly = [];
+  var sales = {};
+  var coordVQ = {};
+  var visCoordTotals = {};
+  var visCoordMonthly = {};
+
+  if (ranking) {
+    var rrows = ranking.getDataRange().getValues();
+
+    monthly = readMonthly(rrows);
+    sales = readSales(rrows);
+
+    var gPivot = readCoordPivot(rrows, 'visitas gerais por coordenador');
+    visCoordTotals = gPivot.totals;
+    visCoordMonthly = gPivot.monthly;
+
+    var qPivot = readCoordPivot(rrows, 'visita qualificada por coordenador');
+    if (Object.keys(qPivot.monthly).length > 0) {
+      Object.keys(qPivot.monthly).forEach(function (coord) {
+        coordVQ[coord] = {};
+        Object.keys(qPivot.monthly[coord]).forEach(function (mes) {
+          coordVQ[coord][mes] = { qtd: qPivot.monthly[coord][mes], valor: 0 };
+        });
+      });
+    }
+  }
+
+  // Se a aba "Visitas Gerais" (alimentada pela automação) já tiver dados,
+  // prefere ela em vez do pivot manual da Ranking, que é frágil e para de
+  // bater assim que a automação começa a rodar sozinha.
+  var vgSheet = ss.getSheetByName('Visitas Gerais');
+  if (vgSheet) {
+    var vgRows = vgSheet.getDataRange().getValues();
+    var vgResult = readVisGeral(vgRows);
+    if (Object.keys(vgResult.monthly).length > 0) {
+      visCoordTotals = vgResult.totals;
+      visCoordMonthly = vgResult.monthly;
+    }
+  }
+
+  // A tabela dinâmica "Visita Qualificada por coordenador" costuma vir vazia
+  // quando a planilha é lida via API (comportamento já visto na exportação
+  // xlsx). Nesse caso, usa o cálculo feito direto da aba "Limpo".
+  var usedFallback = false;
+  if (Object.keys(coordVQ).length === 0 && Object.keys(brokerResult.coordVQFallback).length > 0) {
+    coordVQ = brokerResult.coordVQFallback;
+    usedFallback = true;
+  }
+
+  // garante os 12 meses do ano no array mensal, mesmo sem dado ainda
+  var byMonth = {};
+  monthly.forEach(function (r) { byMonth[r.mes] = r; });
+  var fullMonthly = MONTHS.map(function (m) {
+    return byMonth[m] || { mes: m, negociacoes: 0, visitas: 0, qualificadas: 0, pct: 0 };
+  });
+
+  return {
+    generatedAt: new Date().toISOString(),
+    usedCoordFallback: usedFallback,
+    monthly: fullMonthly,
+    brokers: brokerResult.brokers,
+    sales: sales,
+    coord_vq: coordVQ,
+    vis_coord_totals: visCoordTotals,
+    vis_coord_monthly: visCoordMonthly,
+    parceiros: readParceiros(ss)
+  };
+}
+
+// ── Aba "Limpo": uma linha por visita qualificada ──
+function readBrokers(rows) {
+  var hdr = rows[0] || [];
+  var iCC = findHeaderIndex(hdr, ['corretor', 'vp']);
+  var iCV = findHeaderIndex(hdr, ['valor']);
+  var iCM = findHeaderIndex(hdr, ['visita qualificada']);
+  var iCO = findHeaderIndex(hdr, ['respons']);
+
+  var byC = {};
+  var coordVQFallback = {};
+
+  for (var i = 1; i < rows.length; i++) {
+    var r = rows[i];
+    var mes = iCM >= 0 ? r[iCM] : null;
+    if (!mes || typeof mes !== 'string') continue;
+    var mk = mkNorm(mes);
+    if (!mk) continue;
+
+    var corretor = ((iCC >= 0 && r[iCC]) || '').toString().trim() || '(sem corretor)';
+    var vRaw = iCV >= 0 ? r[iCV] : 0;
+    var v = typeof vRaw === 'number' ? vRaw : (parseFloat((vRaw || '0').toString().replace(',', '.')) || 0);
+
+    if (!byC[corretor]) byC[corretor] = { qualificadas: 0, valor: 0, meses: {} };
+    byC[corretor].qualificadas++;
+    byC[corretor].valor += v;
+    if (!byC[corretor].meses[mk]) byC[corretor].meses[mk] = { qtd: 0, valor: 0 };
+    byC[corretor].meses[mk].qtd++;
+    byC[corretor].meses[mk].valor += v;
+
+    var coordFB = ((iCO >= 0 && r[iCO]) || '').toString().trim();
+    if (coordFB) {
+      if (!coordVQFallback[coordFB]) coordVQFallback[coordFB] = {};
+      if (!coordVQFallback[coordFB][mk]) coordVQFallback[coordFB][mk] = { qtd: 0, valor: 0 };
+      coordVQFallback[coordFB][mk].qtd++;
+      coordVQFallback[coordFB][mk].valor += v;
+    }
+  }
+
+  var brokers = Object.keys(byC)
+    .map(function (name) {
+      return Object.assign({ corretor: name }, byC[name]);
+    })
+    .sort(function (a, b) { return b.qualificadas - a.qualificadas || b.valor - a.valor; });
+
+  return { brokers: brokers, coordVQFallback: coordVQFallback };
+}
+
+// ── Aba "Ranking Visita Qualificada": tabela mensal (Mês / negociações / visitas / qualificadas / %) ──
+function readMonthly(rows) {
+  var mhRow = -1, mesC = -1, negC = -1, visC = -1, qualC = -1, pctC = -1;
+
+  for (var r = 0; r < rows.length && mhRow < 0; r++) {
+    var row = rows[r];
+    for (var c = 0; c < row.length; c++) {
+      if (normTxt(row[c]) !== 'mes') continue;
+      var rightTxt = row.slice(c + 1, c + 5).map(normTxt).join('|');
+      // distingue da tabela de vendas, que também tem uma coluna "Mês"
+      if (rightTxt.indexOf('negoc') >= 0 || rightTxt.indexOf('visita') >= 0) {
+        mhRow = r; mesC = c;
+        row.forEach(function (v, j) {
+          var s = normTxt(v);
+          if (s.indexOf('negoc') >= 0) negC = j;
+          else if (s.indexOf('visita') >= 0) visC = j;
+          else if (s.indexOf('qualificad') >= 0) qualC = j;
+          else if (s === '%') pctC = j;
+        });
+        break;
+      }
+    }
+  }
+
+  var out = [];
+  var seen = {};
+  if (mhRow >= 0) {
+    for (var ri = mhRow + 1; ri < rows.length; ri++) {
+      var row2 = rows[ri];
+      var mVal = mesC >= 0 ? row2[mesC] : null;
+      if (!mVal || typeof mVal !== 'string') continue;
+      var mk = mkNorm(mVal);
+      if (!mk || seen[mk]) continue;
+      var vis = visC >= 0 ? (parseFloat(row2[visC]) || 0) : 0;
+      out.push({
+        mes: mk,
+        negociacoes: negC >= 0 ? (parseInt(row2[negC], 10) || 0) : 0,
+        visitas: parseInt(vis, 10) || 0,
+        qualificadas: qualC >= 0 ? (parseInt(row2[qualC], 10) || 0) : 0,
+        pct: pctC >= 0 ? (parseFloat(row2[pctC]) || 0) : 0
+      });
+      seen[mk] = true;
+    }
+  }
+  out.sort(function (a, b) { return MONTHS.indexOf(a.mes) - MONTHS.indexOf(b.mes); });
+  return out;
+}
+
+// ── Aba "Ranking Visita Qualificada": tabela de vendas (Mês / Número de vendas / Valor vendido) ──
+function readSales(rows) {
+  var hRow = -1, mesC = -1, vendC = -1, valC = -1;
+
+  for (var r = 0; r < rows.length && hRow < 0; r++) {
+    var row = rows[r];
+    for (var c = 0; c < row.length; c++) {
+      if (normTxt(row[c]) !== 'mes') continue;
+      var rightTxt = row.slice(c + 1, c + 5).map(normTxt).join('|');
+      if (rightTxt.indexOf('venda') >= 0) {
+        hRow = r; mesC = c;
+        row.forEach(function (v, j) {
+          var s = normTxt(v);
+          if (s.indexOf('numero') >= 0 && s.indexOf('venda') >= 0) vendC = j;
+          else if (s.indexOf('valor') >= 0) valC = j;
+        });
+        break;
+      }
+    }
+  }
+
+  var out = {};
+  if (hRow >= 0) {
+    for (var ri = hRow + 1; ri < rows.length; ri++) {
+      var row2 = rows[ri];
+      var mVal = mesC >= 0 ? row2[mesC] : null;
+      if (!mVal || typeof mVal !== 'string') continue;
+      var mk = mkNorm(mVal);
+      if (!mk) continue;
+      var vendasRaw = vendC >= 0 ? row2[vendC] : 0;
+      var valorRaw = valC >= 0 ? row2[valC] : 0;
+      out[mk] = {
+        vendas: typeof vendasRaw === 'number' ? vendasRaw : (parseInt(vendasRaw, 10) || 0),
+        valor: parseMoneyBR(valorRaw)
+      };
+    }
+  }
+  return out;
+}
+
+// ── Localiza uma tabela dinâmica pelo título (ex: "Visitas gerais por coordenador"),
+//    depois localiza o cabeçalho ("Responsável") e lê coordenador/mês/contagem,
+//    sem depender de índices fixos de linha ou coluna. ──
+function readCoordPivot(rows, titleTextNorm) {
+  var titleRow = -1, titleCol = -1;
+  for (var r = 0; r < rows.length && titleRow < 0; r++) {
+    var row = rows[r];
+    for (var c = 0; c < row.length; c++) {
+      if (normTxt(row[c]) === titleTextNorm) { titleRow = r; titleCol = c; break; }
+    }
+  }
+  if (titleRow < 0) return { monthly: {}, totals: {} };
+
+  var headerRow = -1, respCol = -1;
+  for (var r2 = titleRow; r2 < Math.min(titleRow + 6, rows.length); r2++) {
+    var row2 = rows[r2];
+    for (var c2 = titleCol; c2 < Math.min(titleCol + 4, row2.length); c2++) {
+      if (normTxt(row2[c2]) === 'responsavel') { headerRow = r2; respCol = c2; break; }
+    }
+    if (headerRow >= 0) break;
+  }
+  if (headerRow < 0) return { monthly: {}, totals: {} };
+
+  var monthCol = respCol + 1, countCol = respCol + 2;
+  var monthly = {}, currentCoord = '';
+
+  for (var r3 = headerRow + 1; r3 < rows.length; r3++) {
+    var row3 = rows[r3];
+    var respVal = row3[respCol], monthVal = row3[monthCol], countVal = row3[countCol];
+    var respStr = (respVal == null ? '' : respVal.toString()).trim();
+    var respNorm = normTxt(respVal);
+
+    if (respNorm === 'total geral') break;
+    if (respStr && respNorm.indexOf('total') >= 0) { currentCoord = ''; continue; }
+    if (respStr) { currentCoord = respStr; if (!monthly[currentCoord]) monthly[currentCoord] = {}; }
+    if (!currentCoord) continue;
+
+    var mk = mkNorm(monthVal);
+    if (mk && countVal !== null && countVal !== '' && typeof countVal === 'number') {
+      monthly[currentCoord][mk] = parseInt(countVal, 10);
+    }
+  }
+
+  var totals = {};
+  Object.keys(monthly).forEach(function (c) {
+    totals[c] = Object.keys(monthly[c]).reduce(function (s, m) { return s + monthly[c][m]; }, 0);
+  });
+  return { monthly: monthly, totals: totals };
+}
+
+/**
+ * ── IMPORTAÇÃO AUTOMÁTICA DO RD STATION (planilha TESTE) ──
+ * doPost recebe um JSON assim:
+ * {
+ *   "mes": "Setembro",
+ *   "visitasSemana": 4,
+ *   "negociacoesSemana": 5,
+ *   "qualificadas": [
+ *     {"rdId":"...", "nome":"...", "empresa":"...", "corretor":"...", "valor":1234, "mes":"Setembro", "coordenadorRD":"Ricardo"}
+ *   ]
+ * }
+ * Grava as novas visitas qualificadas na aba "Limpo" (evitando duplicar pelo ID do RD,
+ * guardado numa coluna extra "RD_ID"), e soma visitasSemana/negociacoesSemana ao mês
+ * correspondente na aba "Ranking Visita Qualificada", recalculando também o total de
+ * qualificadas e o % a partir da própria aba "Limpo" (fonte da verdade).
+ */
+function doPost(e) {
+  try {
+    var payload = JSON.parse(e.postData.contents);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var result;
+    if (payload.action === 'cleanupMonth') {
+      result = cleanupMonth(ss, payload);
+    } else if (payload.action === 'backfillIds') {
+      result = backfillIds(ss, payload);
+    } else if (payload.action === 'fixVisGeraisColumns') {
+      result = fixVisGeraisColumns(ss, payload);
+    } else if (payload.action === 'deleteVisGeraisRows') {
+      result = deleteVisGeraisRows(ss, payload);
+    } else if (payload.action === 'setVisGeralResponsavel') {
+      result = setVisGeralResponsavel(ss, payload);
+    } else if (payload.action === 'updateVisGeraisExtra') {
+      result = updateVisGeraisExtra(ss, payload);
+    } else if (payload.action === 'setLimpoResponsavel') {
+      result = setLimpoResponsavel(ss, payload);
+    } else if (payload.action === 'setConfig') {
+      result = setConfig(ss, payload);
+    } else if (payload.action === 'importParceiros') {
+      result = importParceiros(ss, payload);
+    } else {
+      result = importFromRD(ss, payload);
+    }
+    return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+/**
+ * Ação de manutenção (uso pontual): remove da aba "Limpo" as linhas de um mês que
+ * não têm RD_ID (ou seja, foram lançadas manualmente antes da automação existir,
+ * causando duplicidade com o que a automação já trouxe do RD) e/ou linhas de
+ * corretores específicos (ex: dados de teste), depois define diretamente
+ * (sobrescreve, não soma) o total de visitas/negociações do mês na aba Ranking,
+ * recalculando qualificadas/% a partir do que sobrou na Limpo.
+ * payload: {"action":"cleanupMonth","mes":"Setembro","setVisitas":16,"setNegociacoes":22,
+ *           "removeWithoutRdId":true,"removeCorretores":["Corretor Fantasma Teste"]}
+ */
+function cleanupMonth(ss, payload) {
+  var limpo = ss.getSheetByName('Limpo');
+  if (!limpo) throw new Error('Aba "Limpo" não encontrada.');
+  var idCol = ensureRdIdHeader(limpo);
+  var mk = mkNorm(payload.mes);
+  var removeCorretores = (payload.removeCorretores || []).map(function (c) { return c.toString().trim().toLowerCase(); });
+
+  var rows = limpo.getDataRange().getValues();
+  var removed = 0;
+  for (var r = rows.length - 1; r >= 1; r--) {
+    var row = rows[r];
+    var rowMes = mkNorm(row[4]);
+    var rowCorretor = (row[2] || '').toString().trim().toLowerCase();
+    var rowRdId = row[idCol - 1];
+    var shouldRemove = false;
+    if (payload.removeWithoutRdId && mk && rowMes === mk && !rowRdId) shouldRemove = true;
+    if (removeCorretores.indexOf(rowCorretor) >= 0) shouldRemove = true;
+    if (shouldRemove) {
+      limpo.deleteRow(r + 1);
+      removed++;
+    }
+  }
+
+  var rankingResult = null;
+  if (payload.mes && (payload.setVisitas != null || payload.setNegociacoes != null)) {
+    rankingResult = setRankingMonthTotals(ss, payload.mes, payload.setVisitas, payload.setNegociacoes);
+  }
+
+  return { linhasRemovidas: removed, ranking: rankingResult };
+}
+
+/**
+ * Preenche o RD_ID de linhas antigas da aba "Limpo" que já existiam antes da automação,
+ * a partir de um casamento feito fora da planilha (nome/corretor/mês/valor batendo com
+ * uma negociação real no RD). Só escreve se a célula estiver vazia, nunca sobrescreve
+ * um RD_ID já preenchido.
+ * payload: {"action":"backfillIds","updates":[{"rowIndex":5,"rdId":"..."}]}
+ */
+function backfillIds(ss, payload) {
+  var limpo = ss.getSheetByName('Limpo');
+  if (!limpo) throw new Error('Aba "Limpo" não encontrada.');
+  var idCol = ensureRdIdHeader(limpo);
+  var updates = payload.updates || [];
+  var applied = 0, skipped = 0;
+  updates.forEach(function (u) {
+    var cell = limpo.getRange(u.rowIndex, idCol);
+    if (cell.getValue()) { skipped++; return; }
+    cell.setValue(u.rdId);
+    applied++;
+  });
+  return { preenchidos: applied, jaTinhamId: skipped };
+}
+
+function setRankingMonthTotals(ss, mes, setVisitas, setNegociacoes) {
+  var ranking = ss.getSheetByName('Ranking Visita Qualificada');
+  if (!ranking) return null;
+  var rrows = ranking.getDataRange().getValues();
+
+  var mhRow = -1, mesC = -1, negC = -1, visC = -1, qualC = -1, pctC = -1;
+  for (var r = 0; r < rrows.length && mhRow < 0; r++) {
+    var row = rrows[r];
+    for (var c = 0; c < row.length; c++) {
+      if (normTxt(row[c]) !== 'mes') continue;
+      var rightTxt = row.slice(c + 1, c + 5).map(normTxt).join('|');
+      if (rightTxt.indexOf('negoc') >= 0 || rightTxt.indexOf('visita') >= 0) {
+        mhRow = r; mesC = c;
+        row.forEach(function (v, j) {
+          var s = normTxt(v);
+          if (s.indexOf('negoc') >= 0) negC = j;
+          else if (s.indexOf('visita') >= 0) visC = j;
+          else if (s.indexOf('qualificad') >= 0) qualC = j;
+          else if (s === '%') pctC = j;
+        });
+        break;
+      }
+    }
+  }
+  if (mhRow < 0) return null;
+
+  var mk = mkNorm(mes);
+  var targetRow = -1;
+  for (var ri = mhRow + 1; ri < rrows.length; ri++) {
+    if (mkNorm(rrows[ri][mesC]) === mk) { targetRow = ri; break; }
+  }
+  if (targetRow < 0) return null;
+
+  var sheetRow = targetRow + 1;
+  if (setNegociacoes != null && negC >= 0) ranking.getRange(sheetRow, negC + 1).setValue(setNegociacoes);
+  if (setVisitas != null && visC >= 0) ranking.getRange(sheetRow, visC + 1).setValue(setVisitas);
+  var newVis = setVisitas != null ? setVisitas : (visC >= 0 ? ranking.getRange(sheetRow, visC + 1).getValue() : 0);
+
+  var limpo = ss.getSheetByName('Limpo');
+  var qCount = 0;
+  if (limpo) {
+    var lrows = limpo.getDataRange().getValues();
+    for (var li = 1; li < lrows.length; li++) {
+      if (mkNorm(lrows[li][4]) === mk) qCount++;
+    }
+  }
+  if (qualC >= 0) ranking.getRange(sheetRow, qualC + 1).setValue(qCount);
+  var pct = newVis > 0 ? (qCount / newVis * 100) : 0;
+  if (pctC >= 0) ranking.getRange(sheetRow, pctC + 1).setValue(pct);
+
+  return { mes: mk, totalVisitas: newVis, totalQualificadas: qCount, pct: pct };
+}
+
+// Mapa corretor -> coordenador, construído a partir do histórico da planilha original,
+// usado só quando o campo ". Nome Coordenador - Vendas" vier vazio no RD.
+var CORRETOR_COORD_FALLBACK = {"-": "Ricardo", "alexa martins": "Mateus Calebi", "alexandra martins": "Suyane Cachoeira", "alexandre": "Ricardo", "alisson bruxo": "Suyane Cachoeira", "allen ramos": "Ricardo", "anatielle gomes": "Suyane Cachoeira", "andre": "Suyane Cachoeira", "andré backes": "Ricardo", "andré brustulin": "Ricardo", "angelo": "Ricardo", "angelo cattoni": "Ricardo", "anna vargas": "Suyane Cachoeira", "aruana": "Suyane Cachoeira", "barbara goettems": "Suyane Cachoeira", "bruna ribeiro": "Mateus Calebi", "bruno": "Suyane Cachoeira", "bruno teixeira": "Ricardo", "bruxo": "Suyane Cachoeira", "bruxo (alisson rosset)": "Suyane Cachoeira", "canova": "Mateus Calebi", "carine bottene": "Suyane Cachoeira", "carla": "Ricardo", "carla  regina moser": "Suyane Cachoeira", "carla regina moser": "Suyane Cachoeira", "carla regina moser e gislaine bianchini": "Suyane Cachoeira", "carlos gamarra": "Ricardo", "claiton rodrigues": "Suyane Cachoeira", "cleber neckel": "Suyane Cachoeira", "cleiton farias": "Suyane Cachoeira", "daniel henrique": "Mateus Calebi", "daniel oliveira": "Mateus Calebi", "dhiogo": "Mateus Calebi", "diana cadore": "Ricardo", "diego dutra": "Suyane Cachoeira", "diego farensena": "Ricardo", "douglas sabel": "Mateus Calebi", "débora melo": "Ricardo", "edgar costa": "Suyane Cachoeira", "eduardo castamann": "Mateus Calebi", "eliana": "Suyane Cachoeira", "emerson": "Suyane Cachoeira", "evandro": "Ricardo", "everaldo marcos": "Ricardo", "ewerton": "Suyane Cachoeira", "fabiana stefini": "Ricardo", "fabio bulhões": "Mateus Calebi", "felipe perin": "Suyane Cachoeira", "felipe tavares": "Suyane Cachoeira", "fernando": "Mateus Calebi", "fernando erthal": "Mateus Calebi", "flavia": "Ricardo", "flavio correa": "Ricardo", "fábio bulhões": "Ricardo", "gabriela zaggo": "Suyane Cachoeira", "geandre silva": "Ricardo", "giovana monteiro": "Suyane Cachoeira", "gisele campi": "Ricardo", "gustavo costi": "Ricardo", "gustavo dal piva": "Mateus Calebi", "henrique": "Ricardo", "henrique silveira": "Ricardo", "jaison": "Mateus Calebi", "jeferson": "Mateus Calebi", "jeferson medeiros": "Mateus Calebi", "jennifer azevedo": "Suyane Cachoeira", "jonathan felix": "Ricardo", "jorge palauro": "Ricardo", "josi palmasola": "Suyane Cachoeira", "joão": "Ricardo", "joão furtado": "Suyane Cachoeira", "joão junior": "Mateus Calebi", "joão suzin": "Suyane Cachoeira", "junior buture": "Ricardo", "junior leão": "Ricardo", "karine": "Mateus Calebi", "kauê karraro": "Ricardo", "kelwin eggert": "Suyane Cachoeira", "leandro": "Mateus Calebi", "leandro atlan": "Mateus Calebi", "leandro knebel": "Ricardo", "lidy nogueira vilela": "Suyane Cachoeira", "lisandra diefenthaeler": "Suyane Cachoeira", "luan": "Ricardo", "luan almeida": "Ricardo", "lucas cabedal": "Mateus Calebi", "lucas rocha": "Suyane Cachoeira", "lucas rocha/ocsandro rossi": "Suyane Cachoeira", "luiz gustavo": "Mateus Calebi", "luiz paulo relly": "Ricardo", "marcel campos": "Suyane Cachoeira", "marcelo noronha": "Suyane Cachoeira", "marcia pequeno": "Suyane Cachoeira", "mari antunes": "Suyane Cachoeira", "mateus calebi": "Mateus Calebi", "mateus reginatto": "Ricardo", "mauriel": "Suyane Cachoeira", "mayco zunino": "Ricardo", "michely atlan": "Mateus Calebi", "minéia": "Ricardo", "natalie ribas": "Suyane Cachoeira", "nicoli new life": "Mateus Calebi", "ocsandro": "Mateus Calebi", "pablo patrick": "Suyane Cachoeira", "pablo ramires": "Ricardo", "patricia vier": "Suyane Cachoeira", "priscila romani": "Ricardo", "rafael dias": "Suyane Cachoeira", "rafael prado": "Ricardo", "ramão freibeier": "Mateus Calebi", "renan lazarotto": "Ricardo", "renata santos": "Ricardo", "renato lazarotto": "Ricardo", "robert marques": "Mateus Calebi", "roberta": "Mateus Calebi", "rodolfo": "Suyane Cachoeira", "rodolfo marcolino": "Suyane Cachoeira", "rodrigo imperial": "Mateus Calebi", "rogerio": "Ricardo", "sasse imobank": "Mateus Calebi", "sergio e. bitello": "Suyane Cachoeira", "simone duarte": "Suyane Cachoeira", "taner silva": "Mateus Calebi", "tiago messias": "Suyane Cachoeira", "uilliam taffarel": "Mateus Calebi", "vinicius amorin": "Ricardo", "vinicius buture": "Mateus Calebi", "vinicius mras": "Suyane Cachoeira", "vinícius imperial": "Mateus Calebi", "wagner": "Ricardo"};
+
+// owner_id do RD Station -> coordenador, só para os 3 usuários que SÃO
+// coordenadores (dono do negócio direto, sem passar por corretor externo).
+// Usado como segundo fallback quando o campo ". Nome Coordenador - Vendas"
+// vem vazio do RD e o corretor também não está na tabela de referência.
+var OWNER_ID_COORD = {
+  '6579c1447f9c0b00141469fd': 'Ricardo',
+  '67f7bd7dce802f0014f2d705': 'Suyane Cachoeira',
+  '68e81dc41521da00140e2d28': 'Mateus Calebi'
 };
 
-function fmtM(v){
-  if(v>=1e9)return 'R$ '+(v/1e9).toFixed(2).replace('.',',')+' B';
-  if(v>=1e6)return 'R$ '+(v/1e6).toFixed(2).replace('.',',')+' M';
-  if(v>0)return 'R$ '+Math.round(v).toLocaleString('pt-BR');
-  return '—';
-}
-function fmtMS(v){
-  if(v>=1e6)return (v/1e6).toFixed(1).replace('.',',')+' M';
-  if(v>0)return Math.round(v).toLocaleString('pt-BR');
-  return '—';
-}
-function initials(n){var p=n.trim().split(' ');return p.length>=2?(p[0][0]+p[p.length-1][0]).toUpperCase():n.slice(0,2).toUpperCase();}
-function showToast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},3000);}
-function animN(el,target,ms){
-  var s=performance.now();
-  (function step(now){
-    var p=Math.min((now-s)/ms,1),e=1-Math.pow(1-p,3),v=Math.round(e*target);
-    el.textContent=v;if(p<1)requestAnimationFrame(step);
-  })(s);
-}
-
-// ── DYNAMIC MONTH PILLS ──
-function renderPills(){
-  var bar=document.getElementById('filter-pills');
-  // Show all months (including future months with 0 data)
-  var activeMths=ST.monthly.map(function(r){return r.mes;});
-  var all=['all'].concat(activeMths);
-  bar.innerHTML=all.map(function(m){
-    var label=m==='all'?'Todos':(MABR[m]||m);
-    var active=ST.month===m?' active':'';
-    return '<button class="gpill'+active+'" data-m="'+m+'" onclick="setGlobalMonth(\''+m+'\')">'
-      +label+'</button>';
-  }).join('');
-}
-
-function setGlobalMonth(m){
-  ST.month=m;
-  renderPills();
-  renderKPIs();renderCoords();renderPodium();renderTableSection();renderParceiros();
-  if(ST.chart)highlightChartMonth();
-}
-
-// Retorna os corretores já filtrados pelo mês selecionado (ou pelo total, se 'all'),
-// reaproveitado tanto pelo pódio quanto pela tabela de ranking.
-function getFilteredBrokers(){
-  var m=ST.month;
-  return ST.brokers.map(function(b){
-    if(m==='all')return {corretor:b.corretor,qualificadas:b.qualificadas,valor:b.valor,
-      meses:Object.keys(b.meses).sort(function(a,z){return MONTHS_ORDER.indexOf(a)-MONTHS_ORDER.indexOf(z);})};
-    if(!b.meses[m])return null;
-    return {corretor:b.corretor,qualificadas:b.meses[m].qtd,valor:b.meses[m].valor,meses:[m]};
-  }).filter(Boolean);
-}
-
-// ── KPIs ──
-function renderKPIs(){
-  var m=ST.month,vq,vis,neg,pct,vendas,volVend;
-  if(m==='all'){
-    vq=ST.monthly.reduce(function(s,r){return s+r.qualificadas;},0);
-    vis=ST.monthly.reduce(function(s,r){return s+r.visitas;},0);
-    neg=ST.monthly.reduce(function(s,r){return s+(r.negociacoes||0);},0);
-    pct=vis>0?Math.round(vq/vis*1000)/10:0;
-    vendas=Object.values(ST.sales).reduce(function(s,v){return s+(v.vendas||0);},0);
-    volVend=Object.values(ST.sales).reduce(function(s,v){return s+(v.valor||0);},0);
-  } else {
-    var row=ST.monthly.find(function(r){return r.mes===m;})||{};
-    vq=row.qualificadas||0; vis=row.visitas||0; neg=row.negociacoes||0; pct=row.pct||0;
-    var sv=ST.sales[m]||{vendas:0,valor:0};
-    vendas=sv.vendas; volVend=sv.valor;
+function resolveCoordinator(nomeCorretor, coordDoRD, ownerId) {
+  if (coordDoRD) {
+    if (coordDoRD === 'Suyane') return 'Suyane Cachoeira';
+    if (coordDoRD === 'Mateus') return 'Mateus Calebi';
+    if (coordDoRD === 'Ricardo') return 'Ricardo';
+    return coordDoRD;
   }
-  animN(document.getElementById('kv-vq'),vq,700);
-  animN(document.getElementById('kv-vis'),vis,700);
-  animN(document.getElementById('kv-neg'),neg,700);
-  document.getElementById('kv-pct').textContent=pct.toFixed(1).replace('.',',')+String.fromCharCode(37);
-  animN(document.getElementById('kv-vend'),vendas,700);
-  var vvEl=document.getElementById('kv-vol'),s0=performance.now();
-  (function step(now){
-    var p=Math.min((now-s0)/800,1),e=1-Math.pow(1-p,3);
-    var displayVal=e*volVend;
-    var formatted;
-    if(displayVal>=1e6){
-      formatted='R$ '+(displayVal/1e6).toFixed(2).replace('.',',')+'M';
-    } else if(displayVal>=1e3){
-      formatted='R$ '+(displayVal/1e3).toFixed(2).replace('.',',')+'K';
-    } else {
-      formatted='R$ '+displayVal.toFixed(2).replace('.',',');
-    }
-    vvEl.textContent=formatted;
-    if(p<1)requestAnimationFrame(step);
-  })(s0);
+  var key = (nomeCorretor || '').toString().trim().toLowerCase();
+  if (CORRETOR_COORD_FALLBACK[key]) return CORRETOR_COORD_FALLBACK[key];
+  if (ownerId && OWNER_ID_COORD[ownerId]) return OWNER_ID_COORD[ownerId];
+  return '';
 }
 
-// ── COORDINATOR CARDS ──
-function renderCoords(){
-  var m=ST.month;
-  var coords=Object.keys(ST.coord_vq).filter(function(c){
-    return EXCLUDED_COORDS.indexOf(c.trim().toLowerCase())<0;
+/**
+ * Ação de manutenção pontual: preenche o campo "Responsável" de linhas que
+ * ficaram em branco (corretor não mapeado e sem coordenador no RD), usado
+ * quando a gente descobre manualmente quem é o responsável (ex: pelo
+ * owner_id do negócio no RD). Só escreve se a célula estiver vazia.
+ * payload: {"action":"setVisGeralResponsavel","updates":[{"rowIndex":284,"responsavel":"Suyane Cachoeira"}]}
+ */
+function setVisGeralResponsavel(ss, payload) {
+  var sheet = ss.getSheetByName('Visitas Gerais');
+  if (!sheet) throw new Error('Aba "Visitas Gerais" não encontrada.');
+  var col = getVisGeralColumns(sheet);
+  if (!col.responsavel) throw new Error('Coluna "Responsável" não encontrada.');
+  var updates = payload.updates || [];
+  var applied = 0, skipped = 0;
+  updates.forEach(function (u) {
+    var cell = sheet.getRange(u.rowIndex, col.responsavel);
+    if (cell.getValue()) { skipped++; return; }
+    cell.setValue(u.responsavel);
+    applied++;
   });
-  document.getElementById('coord-row').innerHTML=coords.map(function(coord,ci){
-    var vqData=ST.coord_vq[coord]||{};
-    var vq_n,vis_n,pctTxt;
-    if(m==='all'){
-      vq_n=Object.values(vqData).reduce(function(s,d){return s+(d.qtd||0);},0);
-      vis_n=ST.vis_coord_totals[coord]||0;
-      var pb=vis_n>0?Math.min(Math.round(vq_n/vis_n*100),100):0;
-      pctTxt=vis_n>0?pb+String.fromCharCode(37)+' conv.':'—';
-    } else {
-      vq_n=(vqData[m]&&vqData[m].qtd)||0;
-      vis_n=(ST.vis_coord_monthly[coord]&&ST.vis_coord_monthly[coord][m])||null;
-      var pb3=vis_n>0?Math.min(Math.round(vq_n/vis_n*100),100):0;
-      pctTxt=vis_n>0?pb3+String.fromCharCode(37)+' conv.':'—';
-    }
-    var visLabel=vis_n!==null&&vis_n>0?vis_n:'—';
-    var pb2=vis_n>0?Math.min(Math.round(vq_n/vis_n*100),100):0;
-    return '<div class="coord-card '+CCLS[ci%4]+'">'
-      +'<div class="coord-name">'+coord+'</div>'
-      +'<div class="coord-stats">'
-        +'<div class="coord-stat"><div class="csval gold">'+vq_n+'</div><div class="cslabel">Qualif.</div></div>'
-        +'<div class="cdivider"></div>'
-        +'<div class="coord-stat"><div class="csval dim">'+visLabel+'</div><div class="cslabel">Gerais</div></div>'
-      +'</div>'
-      +'<div class="cbar-wrap"><div class="cbar" style="width:'+pb2+'%"></div></div>'
-      +'<div class="cpct">'+pctTxt+'</div>'
-      +'</div>';
-  }).join('');
+  return { preenchidos: applied, jaTinhamValor: skipped };
 }
 
-// ── CHART ──
-function renderChart(){
-  var m=ST.monthly;
-  var labels=m.map(function(r){return MABR[r.mes]||r.mes.slice(0,3);});
-  var vis=m.map(function(r){return r.visitas;});
-  var q=m.map(function(r){return r.qualificadas;});
-  var pcts=m.map(function(r){return r.pct;});
-  if(ST.chart)ST.chart.destroy();
-  var ctx=document.getElementById('monthlyChart').getContext('2d');
-  ST.chart=new Chart(ctx,{
-    data:{labels:labels,datasets:[
-      {type:'bar',label:'Total Visitas',data:vis,backgroundColor:'rgba(157,133,95,0.22)',borderColor:'rgba(157,133,95,0.45)',borderWidth:1,borderRadius:4,yAxisID:'y'},
-      {type:'bar',label:'Qualificadas',data:q,backgroundColor:'rgba(196,169,122,0.85)',borderColor:'#C4A97A',borderWidth:1,borderRadius:4,yAxisID:'y'},
-      {type:'line',label:'Convers\u00e3o %',data:pcts,borderColor:'#F5ECD9',backgroundColor:'rgba(245,236,217,0.06)',borderWidth:2,pointBackgroundColor:'#F5ECD9',pointRadius:4,tension:.35,fill:true,yAxisID:'pct'}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,
-      interaction:{mode:'index',intersect:false},
-      plugins:{
-        legend:{labels:{color:'rgba(245,236,217,0.6)',font:{size:11},boxWidth:12,padding:14}},
-        tooltip:{backgroundColor:'#2E1520',borderColor:'rgba(157,133,95,0.4)',borderWidth:1,
-          titleColor:'#C4A97A',bodyColor:'#F5ECD9',padding:10,
-          callbacks:{label:function(c){
-            if(c.dataset.label.indexOf('Convers')===0)return ' '+c.parsed.y.toFixed(1)+'%';
-            return ' '+c.parsed.y+' '+c.dataset.label.toLowerCase();
-          }}}
-      },
-      scales:{
-        x:{ticks:{color:'rgba(245,236,217,0.5)',font:{size:11}},grid:{color:'rgba(157,133,95,0.07)'}},
-        y:{position:'left',ticks:{color:'rgba(245,236,217,0.5)',font:{size:11}},grid:{color:'rgba(157,133,95,0.1)'},
-          title:{display:true,text:'Visitas',color:'rgba(245,236,217,0.35)',font:{size:10}}},
-        pct:{position:'right',min:0,max:100,ticks:{color:'rgba(245,236,217,0.35)',font:{size:11},
-          callback:function(v){return v+'%';}},grid:{display:false}}
-      }
-    }
+function ensureRdIdHeader(sheet) {
+  var lastCol = Math.max(sheet.getLastColumn(), 7);
+  var headerRow = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  var idCol = headerRow.indexOf('RD_ID') + 1;
+  if (idCol === 0) {
+    idCol = 7; // coluna G, logo depois de Responsável
+    sheet.getRange(1, idCol).setValue('RD_ID');
+  }
+  return idCol;
+}
+
+function getExistingRdIds(sheet) {
+  var idCol = ensureRdIdHeader(sheet);
+  var lastRow = sheet.getLastRow();
+  var ids = {};
+  if (lastRow > 1) {
+    var vals = sheet.getRange(2, idCol, lastRow - 1, 1).getValues();
+    vals.forEach(function (r) { if (r[0]) ids[r[0].toString()] = true; });
+  }
+  return ids;
+}
+
+function importFromRD(ss, payload) {
+  var limpo = ss.getSheetByName('Limpo');
+  if (!limpo) throw new Error('Aba "Limpo" não encontrada.');
+
+  var idCol = ensureRdIdHeader(limpo);
+  var existingIds = getExistingRdIds(limpo);
+  var inserted = 0, skipped = 0;
+  var novas = payload.qualificadas || [];
+
+  novas.forEach(function (q) {
+    if (!q.rdId || existingIds[q.rdId]) { skipped++; return; }
+    var responsavel = resolveCoordinator(q.corretor, q.coordenadorRD, q.ownerId);
+    var row = [];
+    row[0] = q.nome || '';
+    row[1] = q.empresa || '';
+    row[2] = q.corretor || '';
+    row[3] = q.valor || 0;
+    row[4] = q.mes || '';
+    row[5] = responsavel;
+    row[idCol - 1] = q.rdId;
+    limpo.appendRow(row);
+    existingIds[q.rdId] = true;
+    inserted++;
   });
-}
 
-function highlightChartMonth(){
-  if(!ST.chart)return;
-  var idx=ST.monthly.findIndex(function(r){return r.mes===ST.month;});
-  if(idx<0){
-    ST.chart.data.datasets[0].backgroundColor=ST.monthly.map(function(){return 'rgba(157,133,95,0.22)';});
-    ST.chart.data.datasets[1].backgroundColor=ST.monthly.map(function(){return 'rgba(196,169,122,0.85)';});
-  } else {
-    ST.chart.data.datasets[0].backgroundColor=ST.monthly.map(function(_,i){return i===idx?'rgba(157,133,95,0.65)':'rgba(157,133,95,0.15)';});
-    ST.chart.data.datasets[1].backgroundColor=ST.monthly.map(function(_,i){return i===idx?'rgba(196,169,122,1)':'rgba(196,169,122,0.25)';});
-  }
-  ST.chart.update('none');
-}
+  // Visitas gerais: toda negociação criada no período que chegou numa etapa de
+  // visita (qualificada ou não). Vai para uma aba própria "Visitas Gerais",
+  // alinhada às colunas REAIS dessa aba (que já existia com um layout próprio:
+  // Nome / Qualificação / Etapa / Valor Único / Data de criação / Responsável /
+  // RD_ID / ". Nome Corretor (VP)" / Mês). Mês aqui é sempre o mês de CRIAÇÃO
+  // da negociação (não o mês da visita qualificada, que pode ser outro).
+  var vgSheet = getOrCreateVisGeralSheet(ss);
+  var vgCol = getVisGeralColumns(vgSheet);
+  var vgExisting = getExistingVisGeralIds(vgSheet, vgCol);
+  var vgInserted = 0, vgSkipped = 0;
+  var visitas = payload.visitasGerais || [];
 
-// ── PODIUM ──
-function renderPodium(){
-  var m=ST.month;
-  document.getElementById('podium-title').textContent=
-    m==='all'?'Pódio Total':'Pódio de '+(m);
-  var sorted=getFilteredBrokers().sort(function(a,b){return b.qualificadas-a.qualificadas||b.valor-a.valor;});
-  var t=sorted.slice(0,3);
-  var order=[t[1],t[0],t[2]].filter(Boolean);
-  var styles=['s','g','b'],cs=['s','g','b'],ht=['p2','p1','p3'],med=['\uD83E\uDD48','\uD83E\uDD47','\uD83E\uDD49'];
-  document.getElementById('podium').innerHTML=order.map(function(b,i){
-    var ini=initials(b.corretor);
-    var crown=i===1?'<span class="crown">\uD83D\uDC51</span>':'';
-    return '<div class="ps">'
-      +'<div class="pav '+styles[i]+'">'+crown+ini+'</div>'
-      +'<div class="pname">'+b.corretor.split(' ').slice(0,2).join(' ')+'</div>'
-      +'<div class="pcnt '+cs[i]+'">'+b.qualificadas+' VQ</div>'
-      +'<div class="pval">'+fmtMS(b.valor)+'</div>'
-      +'<div class="pplat '+ht[i]+'">'+med[i]+'</div>'
-      +'</div>';
-  }).join('');
-}
-
-// ── RANKING TABLE ──
-function setSort(s){
-  ST.sort=s;
-  document.getElementById('sv').classList.toggle('active',s==='qualificadas');
-  document.getElementById('sr').classList.toggle('active',s==='valor');
-  renderTableSection();
-}
-
-function toggleVerMais(){
-  window.VER_MAIS=!window.VER_MAIS;
-  renderTableSection();
-}
-
-function renderTableSection(){
-  var data=getFilteredBrokers();
-  if(ST.sort==='qualificadas')data.sort(function(a,b){return b.qualificadas-a.qualificadas||b.valor-a.valor;});
-  else data.sort(function(a,b){return b.valor-a.valor||b.qualificadas-a.qualificadas;});
-  var mx=Math.max.apply(null,data.map(function(d){return d.qualificadas;}).concat([1]));
-  var tbody=document.getElementById('tbody');
-  if(!data.length){tbody.innerHTML='<tr><td colspan="6" class="empty">Nenhum dado neste m\u00eas.</td></tr>';return;}
-  var total=data.length;
-  var lim=(window.VER_MAIS||total<=10)?total:10;
-  var btn=document.getElementById('ver-mais-btn');
-  if(btn){
-    document.getElementById('ver-mais-wrap').style.display=total>10?'':'none';
-    btn.textContent=window.VER_MAIS?'Ver menos':'Ver mais ('+(total-10)+' corretores)';
-  }
-  tbody.innerHTML=data.slice(0,lim).map(function(d,i){
-    var rk=i+1;
-    var rkc=rk===1?'\uD83E\uDD47':rk===2?'\uD83E\uDD48':rk===3?'\uD83E\uDD49'
-      :'<span style="color:var(--muted);font-family:Cinzel,serif;font-weight:700">'+rk+'</span>';
-    var pct=Math.round(d.qualificadas/mx*100);
-    var bgs=d.meses.map(function(mb){return '<span class="mb">'+(MABR[mb]||mb)+'</span>';}).join('');
-    var vstr=d.valor>1000?fmtM(d.valor):'<span style="color:var(--muted)">—</span>';
-    return '<tr>'
-      +'<td class="rk">'+rkc+'</td>'
-      +'<td>'+d.corretor+'</td>'
-      +'<td class="vqn">'+d.qualificadas+'</td>'
-      +'<td><div class="bw"><div class="bb" style="width:'+pct+'%"></div></div></td>'
-      +'<td class="vr">'+vstr+'</td>'
-      +'<td><div class="mbs">'+bgs+'</div></td>'
-      +'</tr>';
-  }).join('');
-}
-
-// ── Leitura dinamica de tabela dinamica por coordenador (por titulo, nao por posicao) ──
-function normTxt(s){
-  return (s||'').toString().trim().toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-}
-// Localiza uma tabela dinamica pelo titulo (ex: "Visita Qualificada por coordenador"),
-// depois localiza o cabecalho ("Responsável") e le coordenador/mes/contagem
-// sem depender de indices fixos de linha ou coluna.
-function findCoordPivot(rows, titleText, mkNorm){
-  var needle=normTxt(titleText);
-  var titleRow=-1, titleCol=-1;
-  for(var r=0;r<rows.length && titleRow<0;r++){
-    var row=rows[r]||[];
-    for(var c=0;c<row.length;c++){
-      if(normTxt(row[c])===needle){titleRow=r;titleCol=c;break;}
-    }
-  }
-  if(titleRow<0)return {monthly:{},totals:{}};
-
-  // procura o cabecalho "Responsável" a partir da linha do titulo, numa janela
-  // de colunas proxima ao titulo (evita pegar por engano o cabecalho de uma
-  // tabela vizinha quando esta tabela vier vazia)
-  var headerRow=-1, respCol=-1;
-  for(var r2=titleRow;r2<Math.min(titleRow+6,rows.length);r2++){
-    var row2=rows[r2]||[];
-    for(var c2=titleCol;c2<Math.min(titleCol+4,row2.length);c2++){
-      if(normTxt(row2[c2])==='responsavel'){headerRow=r2;respCol=c2;break;}
-    }
-    if(headerRow>=0)break;
-  }
-  if(headerRow<0)return {monthly:{},totals:{}};
-
-  var monthCol=respCol+1, countCol=respCol+2;
-  var monthly={}, currentCoord='';
-  for(var r3=headerRow+1;r3<rows.length;r3++){
-    var row3=rows[r3]||[];
-    var respVal=row3[respCol], monthVal=row3[monthCol], countVal=row3[countCol];
-    var respStr=(respVal||'').toString().trim();
-    var respNorm=normTxt(respVal);
-
-    if(respNorm==='total geral')break; // fim da tabela
-
-    if(respStr && respNorm.indexOf('total')>=0){
-      currentCoord=''; // linha "Coordenador Total": encerra o coordenador atual
-      continue;
-    }
-    if(respStr){
-      currentCoord=respStr;
-      if(!monthly[currentCoord])monthly[currentCoord]={};
-    }
-    if(!currentCoord)continue;
-
-    var mk=mkNorm(monthVal);
-    if(mk && countVal!==null && typeof countVal==='number'){
-      if(!monthly[currentCoord])monthly[currentCoord]={};
-      monthly[currentCoord][mk]=parseInt(countVal);
-    }
-  }
-
-  var totals={};
-  Object.keys(monthly).forEach(function(c){
-    totals[c]=Object.values(monthly[c]).reduce(function(s,v){return s+v;},0);
+  visitas.forEach(function (v) {
+    if (!v.rdId || vgExisting[v.rdId]) { vgSkipped++; return; }
+    var responsavel = resolveCoordinator(v.corretor, v.coordenadorRD, v.ownerId);
+    var lastRow = vgSheet.getLastRow();
+    var newRow = lastRow + 1;
+    if (vgCol.nome) vgSheet.getRange(newRow, vgCol.nome).setValue(v.nome || '');
+    if (vgCol.valor) vgSheet.getRange(newRow, vgCol.valor).setValue(v.valor || 0);
+    if (vgCol.responsavel) vgSheet.getRange(newRow, vgCol.responsavel).setValue(responsavel);
+    if (vgCol.rdId) vgSheet.getRange(newRow, vgCol.rdId).setValue(v.rdId);
+    if (vgCol.corretor) vgSheet.getRange(newRow, vgCol.corretor).setValue(v.corretor || '');
+    if (vgCol.mes) vgSheet.getRange(newRow, vgCol.mes).setValue(v.mes || '');
+    if (vgCol.qualificacao && v.qualificacao) vgSheet.getRange(newRow, vgCol.qualificacao).setValue(v.qualificacao);
+    if (vgCol.etapa && v.etapa) vgSheet.getRange(newRow, vgCol.etapa).setValue(v.etapa);
+    if (vgCol.dataCriacao && v.dataCriacao) vgSheet.getRange(newRow, vgCol.dataCriacao).setValue(v.dataCriacao);
+    vgExisting[v.rdId] = true;
+    vgInserted++;
   });
-  return {monthly:monthly, totals:totals};
-}
 
-// ── UPLOAD (header-based parser) ──
-function handleUpload(e){
-  var file=e.target.files[0]; if(!file)return;
-  
-  // CLEAR ALL CACHED DATA before processing new file
-  ST.sales={};
-  ST.monthly=[];
-  ST.coords={};
-  ST.vis_coord_totals={};
-  ST.vis_coord_monthly={};
-  
-  var reader=new FileReader();
-  reader.onload=function(ev){
-    try{
-      var wb=XLSX.read(ev.target.result,{type:'array'});
-      var MONTHS=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-      function mkNorm(s){return MONTHS.find(function(m){return m.toLowerCase()===(s||'').trim().toLowerCase();})||null;}
+  var rankingResult = null;
+  if (payload.mes && (payload.visitasSemana || payload.negociacoesSemana)) {
+    rankingResult = updateRankingMonthTotals(ss, payload.mes, payload.visitasSemana || 0, payload.negociacoesSemana || 0);
+  }
 
-      // ── Limpo: header-based column detection ──
-      var limpo=wb.Sheets['Limpo'];
-      if(!limpo){showToast('\u26a0 Aba "Limpo" n\u00e3o encontrada');return;}
-      var lrows=XLSX.utils.sheet_to_json(limpo,{header:1,defval:null});
-      var hdr=lrows[0]||[];
-      function fh(kws){return hdr.findIndex(function(h){return kws.some(function(k){return (h||'').toLowerCase().indexOf(k.toLowerCase())>=0;});});}
-      var iCC=fh(['corretor','VP']),iCV=fh(['valor']),iCM=fh(['visita qualificada']),iCO=fh(['respons']);
-
-      var byC={},coordVQFallback={};
-      for(var i=1;i<lrows.length;i++){
-        var r=lrows[i];
-        var mes=iCM>=0?r[iCM]:null;
-        if(!mes||typeof mes!=='string')continue;
-        var mk=mkNorm(mes); if(!mk)continue;
-        var corretor=((iCC>=0&&r[iCC])||'').toString().trim()||'(sem corretor)';
-        var v=iCV>=0?parseFloat((r[iCV]||'0').toString().replace(',','.'))||0:0;
-        if(!byC[corretor])byC[corretor]={qualificadas:0,valor:0,meses:{}};
-        byC[corretor].qualificadas++;byC[corretor].valor+=v;
-        if(!byC[corretor].meses[mk])byC[corretor].meses[mk]={qtd:0,valor:0};
-        byC[corretor].meses[mk].qtd++;byC[corretor].meses[mk].valor+=v;
-        // fallback: qualificadas por coordenador (usado só se a tabela dinâmica
-        // "Visita Qualificada por coordenador" vier vazia da planilha)
-        var coordFB=((iCO>=0&&r[iCO])||'').toString().trim();
-        if(coordFB){
-          if(!coordVQFallback[coordFB])coordVQFallback[coordFB]={};
-          coordVQFallback[coordFB][mk]=(coordVQFallback[coordFB][mk]||0)+1;
-        }
-      }
-      ST.brokers=Object.entries(byC).map(function(e){return Object.assign({corretor:e[0]},e[1]);})
-        .sort(function(a,b){return b.qualificadas-a.qualificadas||b.valor-a.valor;});
-      // ST.coord_vq e' preenchido mais abaixo, priorizando a tabela dinamica
-      // "Visita Qualificada por coordenador"; coordVQFallback so' e' usado se ela vier vazia.
-
-      // ── Ranking: monthly + sales + vis_coord totals ──
-      var usedFallback=false;
-      var rs=wb.Sheets['Ranking Visita Qualificada'];
-      if(rs){
-        var rrows=XLSX.utils.sheet_to_json(rs,{header:1,defval:null});
-        
-        // CLEAR OLD CACHED DATA before parsing
-        ST.sales={};
-
-        // Monthly: find 'Mês' header
-        var mhRow=-1,mesC=-1,negC=-1,visC=-1,qualC=-1,pctC=-1;
-        for(var ri=0;ri<rrows.length;ri++){
-          var found=rrows[ri].findIndex(function(v){return v&&v.toString().trim()==='Mês';});
-          if(found>=0){
-            mhRow=ri; mesC=found;
-            rrows[ri].forEach(function(v,j){
-              var s=(v||'').toString().toLowerCase();
-              if(s.indexOf('negoci')>=0)negC=j;
-              else if(s.indexOf('total visitas')>=0)visC=j;
-              else if(s.indexOf('qualificad')>=0)qualC=j;
-              else if(s==='%')pctC=j;
-            });
-            break;
-          }
-        }
-        var newM=[],seenM={};
-        if(mhRow>=0){
-          for(var ri=mhRow+1;ri<rrows.length;ri++){
-            var row=rrows[ri];
-            var mVal=mesC>=0?row[mesC]:null;
-            if(!mVal||typeof mVal!=='string')continue;
-            var mk2=mkNorm(mVal); if(!mk2||seenM[mk2])continue;
-            var vis2=visC>=0?parseFloat(row[visC]||0):0;
-            if(!vis2)continue;
-            newM.push({mes:mk2,negociacoes:parseInt(negC>=0?row[negC]||0:0),
-              visitas:parseInt(vis2),qualificadas:parseInt(qualC>=0?row[qualC]||0:0),
-              pct:parseFloat(pctC>=0?row[pctC]||0:0)});
-            seenM[mk2]=true;
-          }
-          newM.sort(function(a,b){return MONTHS.indexOf(a.mes)-MONTHS.indexOf(b.mes);});
-          if(newM.length)ST.monthly=newM;
-          
-          // Ensure all 12 months exist in ST.monthly (add missing months with 0 values)
-          var allMonths=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-          var monthsInData=ST.monthly.map(function(m){return m.mes;});
-          allMonths.forEach(function(m){
-            if(monthsInData.indexOf(m)<0){
-              ST.monthly.push({mes:m,negociacoes:0,visitas:0,qualificadas:0,pct:0});
-            }
-          });
-          // Re-sort to maintain chronological order
-          ST.monthly.sort(function(a,b){return allMonths.indexOf(a.mes)-allMonths.indexOf(b.mes);});
-        }
-
-        // Sales: Simple linear table N7:P19 (NEW STRUCTURE)
-        // Line 7 = headers (Mês, Número de vendas, Valor vendido)
-        // Lines 8-19 = data rows (1 per month)
-        // Columns: N (idx 13) = month, O (idx 14) = sales count, P (idx 15) = value
-        var newS={};
-        function parseMoneyBR(v){
-          if(typeof v==='number')return v;
-          if(!v)return 0;
-          var s=v.toString().replace('R$','').replace(/\./g,'').replace(',','.');
-          return parseFloat(s)||0;
-        }
-        // Dados em DUAS seções: [7,8,9] e [13,14,15]
-        console.log('=== LENDO DUAS SEÇÕES ===');
-        for(var ri=7;ri<20;ri++){
-          var row=rrows[ri]||[];
-          
-          // Seção 1: índices 7,8,9
-          var m1=row[7], v1=row[8], val1=row[9];
-          if(m1 && typeof m1==='string'){
-            var mk1=mkNorm(m1);
-            if(mk1 && v1!==null && typeof v1==='number'){
-              if(!newS[mk1]){newS[mk1]={vendas:parseInt(v1||0),valor:parseMoneyBR(val1)};}
-            }
-          }
-          
-          // Seção 2: índices 13,14,15 (PRIORIDADE - sobrescreve)
-          var m2=row[13], v2=row[14], val2=row[15];
-          if(m2 && typeof m2==='string'){
-            var mk2=mkNorm(m2);
-            if(mk2 && v2!==null && typeof v2==='number'){
-              newS[mk2]={vendas:parseInt(v2||0),valor:parseMoneyBR(val2)};
-              console.log(`✓ ${mk2}: vendas=${v2}, valor=${val2}`);
-            }
-          }
-        }
-        if(Object.keys(newS).length)ST.sales=newS;
-        console.log('DEBUG - Vendas carregadas:', ST.sales);
-
-        // ── Leitura dinamica das duas tabelas dinamicas por titulo (sem indices fixos) ──
-        var qPivot=findCoordPivot(rrows,'Visita Qualificada por coordenador',mkNorm);
-        var gPivot=findCoordPivot(rrows,'Visitas gerais por coordenador',mkNorm);
-
-        // Se a tabela dinamica "Visita Qualificada por coordenador" vier vazia
-        // (problema comum na exportacao do Google Sheets para xlsx), usa como
-        // fallback os dados calculados diretamente da aba "Limpo".
-        var qMonthly=qPivot.monthly;
-        if(Object.keys(qMonthly).length===0 && Object.keys(coordVQFallback).length>0){
-          qMonthly=coordVQFallback;
-          usedFallback=true;
-        }
-
-        var newCoordVQ={};
-        Object.keys(qMonthly).forEach(function(coord){
-          newCoordVQ[coord]={};
-          Object.keys(qMonthly[coord]).forEach(function(mes){
-            newCoordVQ[coord][mes]={qtd:qMonthly[coord][mes],valor:0};
-          });
-        });
-        if(Object.keys(newCoordVQ).length)ST.coord_vq=newCoordVQ;
-
-        if(Object.keys(gPivot.totals).length)ST.vis_coord_totals=gPivot.totals;
-        if(Object.keys(gPivot.monthly).length)ST.vis_coord_monthly=gPivot.monthly;
-      }
-
-      ST.month='all';
-      renderAll();
-      document.getElementById('badge-ok').style.display='inline-block';
-      if(usedFallback){
-        showToast('\u26a0 Tabela "Visita Qualificada por coordenador" veio vazia da planilha. Usando dados da aba Limpo.');
-      } else {
-        showToast('\u2713 Dashboard atualizado!');
-      }
-    }catch(err){showToast('Erro: '+err.message);}
-    e.target.value='';
+  return {
+    qualificadasInseridas: inserted,
+    qualificadasDuplicadas: skipped,
+    visitasGeraisInseridas: vgInserted,
+    visitasGeraisDuplicadas: vgSkipped,
+    ranking: rankingResult
   };
-  reader.readAsArrayBuffer(file);
 }
 
-// ── PARCEIROS: visitas de coordenadores a imobiliarias e treinamentos (metas mensais, soma dos 3 coordenadores) ──
-function renderParceiros(){
-  var sec=document.getElementById('parc-sec');
-  var P=ST.parceiros;
-  if(!P||!P.meses||!Object.keys(P.meses).length){sec.style.display='none';return;}
-  sec.style.display='';
-  var m=ST.month;
-  var com=MONTHS_ORDER.filter(function(x){return P.meses[x];});
-  var isAll=(m==='all');
-  var lista=isAll?com:(P.meses[m]?[m]:[]);
-  if(!lista.length){sec.style.display='none';return;}
-  var coords=P.coords||Object.keys(P.meses[lista[0]]);
-  var tot={visitas:0,fora:0,totais:0,corretores:0};
-  var rows=coords.map(function(c){
-    var v={visitas:0,fora:0,totais:0,corretores:0};
-    lista.forEach(function(mm){
-      var x=(P.meses[mm]&&P.meses[mm][c])||{};
-      Object.keys(v).forEach(function(k){v[k]+=x[k]||0;});
-    });
-    Object.keys(tot).forEach(function(k){tot[k]+=v[k]||0;});
-    return '<tr><td>'+c+'</td><td style="text-align:center">'+v.visitas+'</td><td style="text-align:center">'+v.fora
-      +'</td><td style="text-align:center">'+v.totais+'</td><td style="text-align:center">'+v.corretores+'</td></tr>';
-  });
-  rows.push('<tr style="font-weight:700;color:var(--gold-l)"><td>Total</td><td style="text-align:center">'+tot.visitas
-    +'</td><td style="text-align:center">'+tot.fora+'</td><td style="text-align:center">'+tot.totais
-    +'</td><td style="text-align:center">'+tot.corretores+'</td></tr>');
-  document.getElementById('parc-body').innerHTML=rows.join('');
-  document.getElementById('parc-title').textContent=isAll?('Parceiros • '+lista.join(' + ')+' (total, sem meta)'):('Parceiros • '+m);
-  var defs=[['visitas','Visita Imobiliária Carteira'],['fora','Treinamento Imob. Fora'],['totais','Treinamentos totais'],['corretores','Corretores impactados']];
-  document.getElementById('parc-kpis').innerHTML=defs.map(function(d){
-    var meta=P.metas[d[0]]||0, val=tot[d[0]];
-    var pct=meta>0?Math.round(val/meta*100):0;
-    if(isAll){
-      return '<div class="card" style="padding:14px 16px">'
-        +'<div style="font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">'+d[1]+'</div>'
-        +'<div style="font-size:1.7rem;font-weight:700;color:var(--gold-l);margin:4px 0">'+val+'</div>'
-        +'<div style="font-size:.75rem;color:var(--muted)">total de '+lista.length+' '+(lista.length>1?'meses':'mês')+'</div>'
-        +'</div>';
-    }
-    return '<div class="card" style="padding:14px 16px">'
-      +'<div style="font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">'+d[1]+'</div>'
-      +'<div style="font-size:1.7rem;font-weight:700;color:var(--gold-l);margin:4px 0">'+val+' <span style="font-size:.85rem;color:var(--muted);font-weight:400">/ '+meta+'</span></div>'
-      +'<div style="height:6px;border-radius:3px;background:var(--gold-m);overflow:hidden"><div style="height:100%;width:'+Math.min(pct,100)+'%;background:var(--gold)"></div></div>'
-      +'<div style="font-size:.75rem;color:var(--muted);margin-top:5px">'+pct+String.fromCharCode(37)+' da meta</div>'
-      +'</div>';
-  }).join('');
-}
-
-function renderAll(){renderKPIs();renderCoords();renderPills();renderChart();renderPodium();renderTableSection();renderParceiros();}
-renderAll();
-
-// ── ATUALIZAÇÃO AUTOMÁTICA VIA GOOGLE APPS SCRIPT ──
-// Cole aqui a URL do Web App gerada ao publicar o script (Extensions > Apps Script > Deploy).
-// Enquanto não for preenchida, o dashboard continua mostrando o snapshot fixo (INIT_*) e
-// permanece disponível o botão manual "Atualizar Dados".
-const APPS_SCRIPT_URL='https://script.google.com/macros/s/AKfycbxY1nLEQvJ9E63EFBbRlx1hDDGJV0vgNLeyOi2UZHlIgbVvLL_IcOEPcEh_Rn-hWJo/exec';
-const AUTO_REFRESH_MS=5*60*1000; // reconsulta a cada 5 minutos enquanto a página ficar aberta
-
-function loadFromAppsScript(){
-  if(!APPS_SCRIPT_URL||APPS_SCRIPT_URL.indexOf('COLE_AQUI')>=0){
-    console.warn('APPS_SCRIPT_URL não configurada: atualização automática desativada.');
-    return;
+// ── Aba "Visitas Gerais": cria se não existir, garante cabeçalho e coluna RD_ID ──
+function getOrCreateVisGeralSheet(ss) {
+  var sheet = ss.getSheetByName('Visitas Gerais');
+  if (!sheet) {
+    sheet = ss.insertSheet('Visitas Gerais');
+    sheet.getRange(1, 1, 1, 7).setValues([['Nome', 'Empresa', 'Corretor', 'Valor', 'Mês', 'Responsável', 'RD_ID']]);
   }
-  fetch(APPS_SCRIPT_URL+'?t='+Date.now(),{cache:'no-store'})
-    .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
-    .then(function(data){
-      if(data.monthly) ST.monthly=data.monthly;
-      if(data.brokers) ST.brokers=data.brokers;
-      if(data.sales) ST.sales=data.sales;
-      if(data.coord_vq) ST.coord_vq=data.coord_vq;
-      if(data.vis_coord_totals) ST.vis_coord_totals=data.vis_coord_totals;
-      if(data.vis_coord_monthly) ST.vis_coord_monthly=data.vis_coord_monthly;
-      if(data.parceiros) ST.parceiros=data.parceiros;
-      renderAll();
-      document.getElementById('badge-ok').style.display='inline-block';
-      showToast('✓ Dashboard atualizado automaticamente');
-    })
-    .catch(function(err){
-      console.warn('Não foi possível atualizar automaticamente via Apps Script:',err);
-    });
+  return sheet;
 }
 
-loadFromAppsScript();
-setInterval(loadFromAppsScript,AUTO_REFRESH_MS);
-</script>
-</body>
-</html>
+// Localiza as colunas reais da aba "Visitas Gerais" pelo texto do cabeçalho
+// (essa aba já existia com layout próprio antes da automação: Nome /
+// Qualificação / Etapa / Valor Único / Data de criação / Responsável / RD_ID /
+// ". Nome Corretor (VP)" / Mês — não assume posição fixa).
+function getVisGeralColumns(sheet) {
+  var lastCol = Math.max(sheet.getLastColumn(), 9);
+  var hdr = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  var col = {};
+  col.nome = findHeaderIndex(hdr, ['nome']) + 1;
+  col.valor = findHeaderIndex(hdr, ['valor']) + 1;
+  col.mes = findHeaderIndex(hdr, ['mes', 'mês']) + 1;
+  col.responsavel = findHeaderIndex(hdr, ['respons']) + 1;
+  col.corretor = findHeaderIndex(hdr, ['corretor']) + 1;
+  col.qualificacao = findHeaderIndex(hdr, ['qualificac']) + 1;
+  col.etapa = findHeaderIndex(hdr, ['etapa']) + 1;
+  col.dataCriacao = findHeaderIndex(hdr, ['data de criac', 'data criac']) + 1;
+  col.rdId = hdr.indexOf('RD_ID') + 1;
+  if (!col.rdId) {
+    col.rdId = lastCol + 1;
+    sheet.getRange(1, col.rdId).setValue('RD_ID');
+  }
+  return col;
+}
+
+function ensureVisGeralIdHeader(sheet) {
+  return getVisGeralColumns(sheet).rdId;
+}
+
+function getExistingVisGeralIds(sheet, col) {
+  col = col || getVisGeralColumns(sheet);
+  var lastRow = sheet.getLastRow();
+  var ids = {};
+  if (lastRow > 1 && col.rdId) {
+    var vals = sheet.getRange(2, col.rdId, lastRow - 1, 1).getValues();
+    vals.forEach(function (r) { if (r[0]) ids[r[0].toString()] = true; });
+  }
+  return ids;
+}
+
+/**
+ * Ação de manutenção pontual: conserta linhas que a automação escreveu ANTES
+ * de sabermos que a aba "Visitas Gerais" já tinha um layout próprio (Etapa na
+ * coluna C, Data de criação na E, ao invés de Corretor/Mês). Para cada linha
+ * de rowIndex >= fromRow, pega o valor que está hoje na coluna C (era onde o
+ * corretor tinha sido escrito por engano) e move pra coluna real de corretor
+ * (". Nome Corretor (VP)"), pega o valor da coluna E (onde o mês tinha sido
+ * escrito por engano) e move pra coluna real "Mês", depois limpa C e E.
+ * payload: {"action":"fixVisGeraisColumns","fromRow":278}
+ */
+/**
+ * Ação de manutenção pontual: apaga linhas específicas da aba "Visitas Gerais"
+ * pelo número da linha (rowIndex retornado por dump=visitasgerais), usado para
+ * remover duplicatas criadas pela automação em cima de dados manuais já
+ * existentes (a coluna "RD_ID" antiga guardava nome de produto, não ID real,
+ * então a deduplicação por RD_ID não pegou essas duplicatas).
+ * payload: {"action":"deleteVisGeraisRows","rowIndexes":[448,449,451]}
+ */
+function deleteVisGeraisRows(ss, payload) {
+  var sheet = ss.getSheetByName('Visitas Gerais');
+  if (!sheet) throw new Error('Aba "Visitas Gerais" não encontrada.');
+  var rowIndexes = (payload.rowIndexes || []).slice().sort(function (a, b) { return b - a; });
+  var removed = 0;
+  rowIndexes.forEach(function (r) {
+    if (r > 1 && r <= sheet.getLastRow()) {
+      sheet.deleteRow(r);
+      removed++;
+    }
+  });
+  return { linhasRemovidas: removed };
+}
+
+/**
+ * Preenche Qualificação / Etapa / Data de criação de linhas que a automação
+ * já inseriu na "Visitas Gerais" mas que ficaram sem esses dados (a escrita
+ * original só preenchia Nome/Valor/Mês/Responsável/Corretor/RD_ID).
+ * payload: {"action":"updateVisGeraisExtra","updates":[
+ *   {"rowIndex":278,"qualificacao":"Alta Nobreza","etapa":"Visita/Reunião","dataCriacao":"2026-09-28"}
+ * ]}
+ */
+function updateVisGeraisExtra(ss, payload) {
+  var sheet = ss.getSheetByName('Visitas Gerais');
+  if (!sheet) throw new Error('Aba "Visitas Gerais" não encontrada.');
+  var col = getVisGeralColumns(sheet);
+  var updates = payload.updates || [];
+  var applied = 0;
+  updates.forEach(function (u) {
+    if (col.qualificacao && u.qualificacao) sheet.getRange(u.rowIndex, col.qualificacao).setValue(u.qualificacao);
+    if (col.etapa && u.etapa) sheet.getRange(u.rowIndex, col.etapa).setValue(u.etapa);
+    if (col.dataCriacao && u.dataCriacao) sheet.getRange(u.rowIndex, col.dataCriacao).setValue(u.dataCriacao);
+    applied++;
+  });
+  return { linhasAtualizadas: applied };
+}
+
+/**
+ * Preenche o "Responsável" de linhas específicas da aba "Limpo" que ficaram
+ * em branco (corretor não mapeado e sem coordenador no RD). Só escreve se a
+ * célula estiver vazia.
+ * payload: {"action":"setLimpoResponsavel","updates":[{"rowIndex":142,"responsavel":"Mateus Calebi"}]}
+ */
+function setLimpoResponsavel(ss, payload) {
+  var limpo = ss.getSheetByName('Limpo');
+  if (!limpo) throw new Error('Aba "Limpo" não encontrada.');
+  var hdr = limpo.getRange(1, 1, 1, Math.max(limpo.getLastColumn(), 6)).getValues()[0];
+  var respCol = findHeaderIndex(hdr, ['respons']) + 1;
+  if (!respCol) throw new Error('Coluna "Responsável" não encontrada na aba "Limpo".');
+  var updates = payload.updates || [];
+  var applied = 0, skipped = 0;
+  updates.forEach(function (u) {
+    var cell = limpo.getRange(u.rowIndex, respCol);
+    if (cell.getValue()) { skipped++; return; }
+    cell.setValue(u.responsavel);
+    applied++;
+  });
+  return { preenchidos: applied, jaTinhamValor: skipped };
+}
+
+/**
+ * Guarda na aba "Config" a data da última atualização feita pela automação,
+ * para a próxima rodada começar dali (a leitura do CRM é sempre "do momento",
+ * nunca retroativa, porque a etapa dos cards muda com o tempo).
+ * payload: {"action":"setConfig","ultimaAtualizacao":"2026-10-20"}
+ */
+/**
+ * ── PARCEIROS: visitas de coordenadores a imobiliárias e treinamentos ──
+ * Base única na aba "Parceiros Dados" (uma linha por visita ou treinamento,
+ * já sem duplicatas entre CRM e Tally). A aba "Parceiros Resumo" e o campo
+ * "parceiros" do JSON do dashboard são calculados a partir dela.
+ * Metas mensais, somando os 3 coordenadores.
+ */
+var PARCEIROS_METAS = { visitas: 144, fora: 36, totais: 36, corretores: 100 };
+var PARCEIROS_COORDS = ['Suyane Cachoeira', 'Mateus Calebi', 'Ricardo'];
+var PARCEIROS_HEADERS = ['ID', 'Tipo', 'Data', 'Mês', 'Coordenador', 'Imobiliária/Corretor', 'Tipo de parceiro',
+  'Presentes', 'Categoria', 'Origem', 'RD IDs', 'Tally ID', 'Revisar', 'Observação do usuário'];
+
+function getParceirosSheet(ss) {
+  var sh = ss.getSheetByName('Parceiros Dados');
+  if (!sh) {
+    sh = ss.insertSheet('Parceiros Dados');
+    sh.getRange(1, 1, 1, PARCEIROS_HEADERS.length).setValues([PARCEIROS_HEADERS]);
+    sh.getRange(1, 1, 1, PARCEIROS_HEADERS.length).setFontWeight('bold');
+    sh.getRange(2, 3, 2000, 1).setNumberFormat('@');
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+
+// payload: {"action":"importParceiros","rows":[{id,tipo,data,mes,coord,nome,tp,pres,cat,origem,rd,tally,rev}]}
+// Faz upsert pelo ID: atualiza as colunas A..M e nunca mexe na coluna N (observação do usuário).
+function importParceiros(ss, payload) {
+  var sh = getParceirosSheet(ss);
+  var rows = payload.rows || [];
+  var last = sh.getLastRow();
+  var existing = {};
+  if (last > 1) {
+    sh.getRange(2, 1, last - 1, 1).getValues().forEach(function (r, i) { if (r[0]) existing[r[0].toString()] = i + 2; });
+  }
+  var toAppend = [], updated = 0;
+  rows.forEach(function (r) {
+    var line = [r.id, r.tipo, r.data, r.mes, r.coord, r.nome, r.tp || '', r.pres === '' || r.pres == null ? '' : r.pres,
+      r.cat || '', r.origem || '', r.rd || '', r.tally || '', r.rev || ''];
+    var rowNum = existing[r.id];
+    if (rowNum) { sh.getRange(rowNum, 1, 1, 13).setValues([line]); updated++; }
+    else toAppend.push(line);
+  });
+  if (toAppend.length) {
+    var start = sh.getLastRow() + 1;
+    sh.getRange(start, 3, toAppend.length, 1).setNumberFormat('@');
+    sh.getRange(start, 1, toAppend.length, 13).setValues(toAppend);
+  }
+  var resumo = refreshParceirosResumo(ss);
+  return { inseridas: toAppend.length, atualizadas: updated, resumo: resumo };
+}
+
+function readParceiros(ss) {
+  var sh = ss.getSheetByName('Parceiros Dados');
+  var meses = {};
+  if (sh && sh.getLastRow() > 1) {
+    var vals = sh.getRange(2, 1, sh.getLastRow() - 1, 13).getValues();
+    vals.forEach(function (r) {
+      if (!r[0]) return;
+      var mk = mkNorm(r[3]);
+      var coord = (r[4] || '').toString().trim();
+      if (!mk || !coord) return;
+      if (!meses[mk]) meses[mk] = {};
+      if (!meses[mk][coord]) meses[mk][coord] = { visitas: 0, fora: 0, totais: 0, corretores: 0 };
+      var c = meses[mk][coord];
+      if (r[1] === 'Visita') c.visitas++;
+      else if (r[1] === 'Ajuste') {
+        // Ajuste manual de corretores impactados (Presentes pode ser negativo)
+        c.corretores += parseInt(r[7], 10) || 0;
+      }
+      else if (r[1] === 'Treinamento') {
+        c.totais++;
+        c.corretores += parseInt(r[7], 10) || 0;
+        if (r[8] === 'Fora') c.fora++;
+      }
+    });
+  }
+  return { metas: PARCEIROS_METAS, coords: PARCEIROS_COORDS, meses: meses };
+}
+
+// Reescreve a aba "Parceiros Resumo" (só leitura, calculada): um bloco por mês com dados.
+function refreshParceirosResumo(ss) {
+  var p = readParceiros(ss);
+  var sh = ss.getSheetByName('Parceiros Resumo') || ss.insertSheet('Parceiros Resumo');
+  sh.clear();
+  var out = [['Mês', 'Coordenador', 'Visita Imobiliária Carteira', 'Treinamento Imob. Fora', 'Treinamentos totais', 'Corretores impactados']];
+  MONTHS.forEach(function (m) {
+    if (!p.meses[m]) return;
+    var tot = { visitas: 0, fora: 0, totais: 0, corretores: 0 };
+    PARCEIROS_COORDS.forEach(function (c) {
+      var v = p.meses[m][c] || { visitas: 0, fora: 0, totais: 0, corretores: 0 };
+      out.push([m, c, v.visitas, v.fora, v.totais, v.corretores]);
+      Object.keys(tot).forEach(function (k) { tot[k] += v[k]; });
+    });
+    out.push([m, 'TOTAL', tot.visitas, tot.fora, tot.totais, tot.corretores]);
+    out.push([m, 'META', PARCEIROS_METAS.visitas, PARCEIROS_METAS.fora, PARCEIROS_METAS.totais, PARCEIROS_METAS.corretores]);
+    out.push([m, '% da meta',
+      Math.round(tot.visitas / PARCEIROS_METAS.visitas * 100) + '%',
+      Math.round(tot.fora / PARCEIROS_METAS.fora * 100) + '%',
+      Math.round(tot.totais / PARCEIROS_METAS.totais * 100) + '%',
+      Math.round(tot.corretores / PARCEIROS_METAS.corretores * 100) + '%']);
+    out.push(['', '', '', '', '', '']);
+  });
+  sh.getRange(1, 1, out.length, 6).setValues(out);
+  sh.getRange(1, 1, 1, 6).setFontWeight('bold');
+  return { linhas: out.length };
+}
+
+function setConfig(ss, payload) {
+  var sh = ss.getSheetByName('Config') || ss.insertSheet('Config');
+  sh.getRange(1, 1, 1, 2).setValues([['ultimaAtualizacao', payload.ultimaAtualizacao || '']]);
+  return { ok: true, ultimaAtualizacao: payload.ultimaAtualizacao || '' };
+}
+
+function fixVisGeraisColumns(ss, payload) {
+  var sheet = ss.getSheetByName('Visitas Gerais');
+  if (!sheet) throw new Error('Aba "Visitas Gerais" não encontrada.');
+  var col = getVisGeralColumns(sheet);
+  var fromRow = payload.fromRow || 2;
+  var lastRow = sheet.getLastRow();
+  var fixed = 0;
+  for (var r = fromRow; r <= lastRow; r++) {
+    var corretorErrado = sheet.getRange(r, 3).getValue(); // coluna C, onde tinha ido por engano
+    var mesErrado = sheet.getRange(r, 5).getValue(); // coluna E, onde tinha ido por engano
+    if (!corretorErrado && !mesErrado) continue;
+    if (col.corretor) sheet.getRange(r, col.corretor).setValue(corretorErrado || '');
+    if (col.mes) sheet.getRange(r, col.mes).setValue(mesErrado || '');
+    sheet.getRange(r, 3).setValue('');
+    sheet.getRange(r, 5).setValue('');
+    fixed++;
+  }
+  return { linhasCorrigidas: fixed };
+}
+
+// ── Aba "Visitas Gerais": mesma ideia de readBrokers, mas devolve contagem
+//    por coordenador/mês (é isso que vis_coord_totals/vis_coord_monthly esperam) ──
+function readVisGeral(rows) {
+  var hdr = rows[0] || [];
+  var iCM = findHeaderIndex(hdr, ['mes', 'mês']);
+  var iCO = findHeaderIndex(hdr, ['respons']);
+
+  var monthly = {};
+  for (var i = 1; i < rows.length; i++) {
+    var r = rows[i];
+    var mes = iCM >= 0 ? r[iCM] : null;
+    if (!mes || typeof mes !== 'string') continue;
+    var mk = mkNorm(mes);
+    if (!mk) continue;
+    var coord = ((iCO >= 0 && r[iCO]) || '').toString().trim();
+    if (!coord) continue;
+    if (!monthly[coord]) monthly[coord] = {};
+    monthly[coord][mk] = (monthly[coord][mk] || 0) + 1;
+  }
+  var totals = {};
+  Object.keys(monthly).forEach(function (c) {
+    totals[c] = Object.keys(monthly[c]).reduce(function (s, m) { return s + monthly[c][m]; }, 0);
+  });
+  return { monthly: monthly, totals: totals };
+}
+
+function updateRankingMonthTotals(ss, mes, addVisitas, addNegociacoes) {
+  var ranking = ss.getSheetByName('Ranking Visita Qualificada');
+  if (!ranking) return null;
+  var rrows = ranking.getDataRange().getValues();
+
+  var mhRow = -1, mesC = -1, negC = -1, visC = -1, qualC = -1, pctC = -1;
+  for (var r = 0; r < rrows.length && mhRow < 0; r++) {
+    var row = rrows[r];
+    for (var c = 0; c < row.length; c++) {
+      if (normTxt(row[c]) !== 'mes') continue;
+      var rightTxt = row.slice(c + 1, c + 5).map(normTxt).join('|');
+      if (rightTxt.indexOf('negoc') >= 0 || rightTxt.indexOf('visita') >= 0) {
+        mhRow = r; mesC = c;
+        row.forEach(function (v, j) {
+          var s = normTxt(v);
+          if (s.indexOf('negoc') >= 0) negC = j;
+          else if (s.indexOf('visita') >= 0) visC = j;
+          else if (s.indexOf('qualificad') >= 0) qualC = j;
+          else if (s === '%') pctC = j;
+        });
+        break;
+      }
+    }
+  }
+  if (mhRow < 0) return null;
+
+  var mk = mkNorm(mes);
+  var targetRow = -1;
+  for (var ri = mhRow + 1; ri < rrows.length; ri++) {
+    if (mkNorm(rrows[ri][mesC]) === mk) { targetRow = ri; break; }
+  }
+  if (targetRow < 0) return null;
+
+  var sheetRow = targetRow + 1;
+  var curNeg = negC >= 0 ? (ranking.getRange(sheetRow, negC + 1).getValue() || 0) : 0;
+  var curVis = visC >= 0 ? (ranking.getRange(sheetRow, visC + 1).getValue() || 0) : 0;
+  var newNeg = curNeg + addNegociacoes;
+  var newVis = curVis + addVisitas;
+  if (negC >= 0) ranking.getRange(sheetRow, negC + 1).setValue(newNeg);
+  if (visC >= 0) ranking.getRange(sheetRow, visC + 1).setValue(newVis);
+
+  // recalcula "Total qualificadas" e "%" direto da aba "Limpo" (fonte da verdade),
+  // pra manter batendo com o que os corretores/pódio mostram
+  var limpo = ss.getSheetByName('Limpo');
+  var qCount = 0;
+  if (limpo) {
+    var lrows = limpo.getDataRange().getValues();
+    for (var li = 1; li < lrows.length; li++) {
+      if (mkNorm(lrows[li][4]) === mk) qCount++;
+    }
+  }
+  if (qualC >= 0) ranking.getRange(sheetRow, qualC + 1).setValue(qCount);
+  var pct = newVis > 0 ? (qCount / newVis * 100) : 0;
+  if (pctC >= 0) ranking.getRange(sheetRow, pctC + 1).setValue(pct);
+
+  return { mes: mk, totalNegociacoes: newNeg, totalVisitas: newVis, totalQualificadas: qCount, pct: pct };
+}
