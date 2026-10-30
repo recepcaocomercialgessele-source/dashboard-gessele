@@ -839,7 +839,7 @@ function loadFromAppsScript(){
           var d=c&&c.ultimaAtualizacao;
           if(d&&/^\d{4}-\d{2}-\d{2}/.test(d)){
             var p=d.substring(0,10).split('-');
-            document.getElementById('badge-ok').innerHTML='&#10003; Dados atualizados em '+p[2]+'/'+p[1]+'/'+p[0];
+            document.getElementById('badge-ok').innerHTML='&#10003; Dados atualizados em '+p[2]+'/'+p[1]+'/'+p[0]+(c.ultimaAtualizacaoHora&&/^\d{1,2}:\d{2}$/.test(c.ultimaAtualizacaoHora)?' às '+c.ultimaAtualizacaoHora:'');
           }
         }).catch(function(){});
       showToast('✓ Dashboard atualizado automaticamente');
