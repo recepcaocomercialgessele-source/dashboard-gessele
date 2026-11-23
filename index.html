@@ -234,7 +234,7 @@ body{background:var(--wine);color:var(--cream);font-family:'Inter',sans-serif;mi
             <th style="text-align:center">Visitas carteira</th>
             <th style="text-align:center">Treinamento fora</th>
             <th style="text-align:center">Treinamentos totais</th>
-            <th style="text-align:center">Corretores impactados</th>
+            <th style="text-align:center">Corretores impactados por treinamento</th>
           </tr>
         </thead>
         <tbody id="parc-body"></tbody>
@@ -786,7 +786,7 @@ function renderParceiros(){
     +'</td><td style="text-align:center">'+tot.corretores+'</td></tr>');
   document.getElementById('parc-body').innerHTML=rows.join('');
   document.getElementById('parc-title').textContent=isAll?('Parceiros • '+lista.join(' + ')+' (total, sem meta)'):('Parceiros • '+m);
-  var defs=[['visitas','Visita Imobiliária Carteira'],['fora','Treinamento Imob. Fora'],['totais','Treinamentos totais'],['corretores','Corretores impactados']];
+  var defs=[['visitas','Visita Imobiliária Carteira'],['fora','Treinamento Imob. Fora'],['totais','Treinamentos totais'],['corretores','Corretores impactados por treinamento']];
   document.getElementById('parc-kpis').innerHTML=defs.map(function(d){
     var meta=P.metas[d[0]]||0, val=tot[d[0]];
     var pct=meta>0?Math.round(val/meta*100):0;
