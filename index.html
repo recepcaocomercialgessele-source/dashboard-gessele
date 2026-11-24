@@ -389,7 +389,38 @@ function renderCoords(){
       +'<div class="cbar-wrap"><div class="cbar" style="width:'+pb2+'%"></div></div>'
       +'<div class="cpct">'+pctTxt+'</div>'
       +'</div>';
-  }).join('');
+  }).join('')+vgvCardHtml(coords);
+}
+
+// ── VGV LIQUIDO POR COORDENADOR (aba "VGV por coordenador", sem descontar distratos) ──
+var VGV=null;
+function vgvCardHtml(coords){
+  if(!VGV)return '';
+  var m=ST.month, linhas=[], tv=0, tval=0;
+  var nomes=coords.filter(function(c){return VGV[c];});
+  Object.keys(VGV).forEach(function(c){
+    if(nomes.indexOf(c)<0&&EXCLUDED_COORDS.indexOf(c.trim().toLowerCase())<0)nomes.push(c);
+  });
+  nomes.forEach(function(c){
+    var d=VGV[c]||{}, v=0, val=0, ms=[];
+    MONTHS_ORDER.forEach(function(mm){
+      if(!d[mm]||(m!=='all'&&mm!==m))return;
+      v+=d[mm].vendas||0; val+=d[mm].valor||0; ms.push(MABR[mm]||mm);
+    });
+    if(!v)return;
+    tv+=v; tval+=val;
+    var nome=c.split(' ')[0];
+    linhas.push('<div style="font-size:.72rem;line-height:1.45;margin-bottom:7px;color:var(--cream)">'
+      +'<b style="color:var(--gold-l)">'+nome+'</b> faturou '+v+(v>1?' vendas':' venda')+', '
+      +fmtM(val)+(m==='all'?(ms.length>1?', nos meses ':', no mês ')+ms.join(', '):'')+'.</div>');
+  });
+  if(!linhas.length)linhas.push('<div style="font-size:.72rem;color:var(--muted)">Sem vendas no per\u00edodo.</div>');
+  return '<div class="coord-card c3">'
+    +'<div class="coord-name">VGV l\u00edquido faturado</div>'
+    +linhas.join('')
+    +'<div class="cpct" style="text-align:left;margin-top:6px">Total: '+tv+(tv===1?' venda, ':' vendas, ')+fmtM(tval)+'</div>'
+    +'<div style="font-size:.6rem;color:var(--muted);margin-top:3px">sem descontar distratos</div>'
+    +'</div>';
 }
 
 // ── CHART ──
@@ -842,6 +873,10 @@ function loadFromAppsScript(){
             document.getElementById('badge-ok').innerHTML='&#10003; Dados atualizados em '+p[2]+'/'+p[1]+'/'+p[0]+(c.ultimaAtualizacaoHora&&/^\d{1,2}:\d{2}$/.test(c.ultimaAtualizacaoHora)?' às '+c.ultimaAtualizacaoHora:'');
           }
         }).catch(function(){});
+      fetch(APPS_SCRIPT_URL+'?dump=vgv&t='+Date.now(),{cache:'no-store'})
+        .then(function(r){return r.json();})
+        .then(function(v){ if(v&&v.coords){ VGV=v.coords; renderCoords(); } })
+        .catch(function(){});
       showToast('✓ Dashboard atualizado automaticamente');
     })
     .catch(function(err){
